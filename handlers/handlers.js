@@ -9,34 +9,35 @@ const _data = require('../lib/data');
 // Handler object
 const handlers = {};
 
+
 // Initilize user data processing object
 handlers._userDataProcessing = {};
 
 
-
-
 // User data processes
 handlers._userDataProcessing.post = (( data, callback ) => {
+    // Create user profile
 
-    console.log('POST METHOD SUCCESS!!');
+    _data.create('users', data.payload, callback)
+    console.log('[HANDLER.js],POST METHOD SUCCESS!!');
 });
 
 
 handlers._userDataProcessing.get = (( data, callback ) => {
 
-    console.log('GET METHOD SUCCESS!!');
+    console.log('[HANDLER.js] GET METHOD SUCCESS!!');
 });
 
 
 handlers._userDataProcessing.put = (( data, callback ) => {
 
-    console.log('PUT METHOD SUCCESS!!');
+    console.log('[HANDLER.js] PUT METHOD SUCCESS!!');
 });
 
 
 handlers._userDataProcessing.delete = (( data, callback ) => {
 
-    console.log('DELETE METHOD SUCCESS!!');
+    console.log('[HANDLER.js] DELETE METHOD SUCCESS!!');
 });
 
 
