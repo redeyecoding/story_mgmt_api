@@ -59,10 +59,12 @@ const universalServerUtility = (( req, res ) => {
             // FIND HANDLER
             const foundHandler = router[trimmedPath] ? router[trimmedPath] : handlers.notFound;
         
-            foundHandler('test-data', (statusCode, data) => {
-                console.log('STATUSCODE', statusCode);
-                console.log('data', data)
-     
+            foundHandler(data, (statusCode, err) => {
+                if (!err) {
+                    console.log(statusCode)
+                } else {
+                    console.log(statusCode, err)
+                }
             });
         });
     
@@ -73,6 +75,7 @@ const universalServerUtility = (( req, res ) => {
             // console.log(headers);
             // console.log(req);
             // console.log(queryStrings);
+            //  console.log('CURRENT path', __dirname)
         res.end('SUCCESS');
     
 });
