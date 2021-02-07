@@ -10,6 +10,7 @@ const { StringDecoder } = require('string_decoder');
 const decoder = new StringDecoder('utf8');
 const querystring = require('querystring');
 const config = require('./config');
+const utils = require('./utils/util');
 
 
 
@@ -50,12 +51,12 @@ const universalServerUtility = (( req, res ) => {
             // Assemble Data Object
             const data = {
                 'headers': headers,
-                'payload': buffer,
+                'payload': utils.jsonParser(buffer),
                 'method': method,
                 'queryStrings': querystring,
                 'path': trimmedPath
             };
-    
+
             // FIND HANDLER
             const foundHandler = router[trimmedPath] ? router[trimmedPath] : handlers.notFound;
         
@@ -76,6 +77,8 @@ const universalServerUtility = (( req, res ) => {
             // console.log(req);
             // console.log(queryStrings);
             //  console.log('CURRENT path', __dirname)
+//            console.log(utils.jsonParser('{"fsf":"fsfsf"}'))
+            
         res.end('SUCCESS');
     
 });
