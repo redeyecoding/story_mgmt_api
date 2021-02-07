@@ -14,14 +14,14 @@ const config = require('./config');
 
 
 // HTTP SERVER
-const httpServer = http.createServer(( req, res )=> uVserverUtility(req, res));
+const httpServer = http.createServer(( req, res )=> universalServerUtility(req, res));
 
 // HTTPS SERVER
 const options = config.httpsConfig.options;
-const httpsServer = https.createServer(options, ( req,res ) => uVserverUtility(req, res));
+const httpsServer = https.createServer(options, ( req,res ) => universalServerUtility(req, res));
 
 // Universal Server Utility
-const uVserverUtility = (( req, res ) => {
+const universalServerUtility = (( req, res ) => {
         // Parse incoming requests from user
         // get the URL  ( www.website.com/kitchen_goods?tools=pots )
         const parseUrl = url.parse(req.url, true);
