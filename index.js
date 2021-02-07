@@ -78,8 +78,13 @@ const universalServerUtility = (( req, res ) => {
 });
 
 
-httpServer.listen(config.httpConfig.httpPort, () => console.log(`HTTP_Server is now listening on port ${config.httpConfig.httpPort} in ${config.httpConfig.envMode} mode.`));
-httpsServer.listen(config.httpsConfig.httpsPort, () => console.log(`HTTPS_Server is now listening on port ${config.httpsConfig.httpsPort} in ${config.httpsConfig.envMode} mode.`));
+httpServer.listen(
+    config.httpConfig.httpPort, 
+    () => console.log(`HTTP_Server is now listening on port ${config.httpConfig.httpPort} in ${config.httpConfig.envMode} mode.`));
+
+httpsServer.listen(
+    config.httpsConfig.httpsPort, 
+    () => console.log(`HTTPS_Server is now listening on port ${config.httpsConfig.httpsPort} in ${config.httpsConfig.envMode} mode.`));
 
 
 // Router
