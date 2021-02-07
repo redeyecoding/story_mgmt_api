@@ -13,15 +13,12 @@ const httpsPort = process.env.NODE_ENV.trim() === 'production'.trim() ? 5000 : 5
 const config = {
     httpConfig: {
         'httpPort': httpPort,
+        'envMode': process.env.NODE_ENV
     },
     httpsConfig: {
         'httpsPort': httpsPort,
+        'envMode': process.env.NODE_ENV
     }
 };
-
-
-
-// Check to see if the current node 'mode' is production or stage
-// const getEnvironmentType = process.env.NODE_ENV.trim() === 'staging'.trim() ? 
 
 module.exports = config;
