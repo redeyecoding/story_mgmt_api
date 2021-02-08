@@ -51,7 +51,7 @@ const universalServerUtility = (( req, res ) => {
             // Assemble Data Object
             const data = {
                 'headers': headers,
-                'payload': utils.jsonParser(buffer),
+                'payload': buffer,
                 'method': method,
                 'queryStrings': querystring,
                 'path': trimmedPath
