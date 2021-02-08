@@ -35,7 +35,7 @@ handlers._userDataProcessing.put = (( data, callback ) => {
 
 handlers._userDataProcessing.delete = (( data, callback ) => {
     // Delete user file
-    _data.delete('users', callback)
+    _data.delete('users',data, callback)
 });
 
 
