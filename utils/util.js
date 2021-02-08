@@ -23,7 +23,6 @@ const errorUtility = (( statusCode, message, errorType=null ) => {
     return JSON.stringify(jsonResponse);
 });
 
-console.log(errorUtility('message', 200, 'fileProccess'))
 
 module.exports = {
     'jsonParser': jsonParser,
