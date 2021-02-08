@@ -17,9 +17,7 @@ handlers._userDataProcessing = {};
 // User data processes
 handlers._userDataProcessing.post = (( data, callback ) => {
     // Create user profile
-
     _data.create('users', data.payload, callback)
-    console.log('[HANDLER.js],POST METHOD SUCCESS!!');
 });
 
 
@@ -36,8 +34,8 @@ handlers._userDataProcessing.put = (( data, callback ) => {
 
 
 handlers._userDataProcessing.delete = (( data, callback ) => {
-
-    console.log('[HANDLER.js] DELETE METHOD SUCCESS!!');
+    // Delete user file
+    _data.delete('users', callback)
 });
 
 
