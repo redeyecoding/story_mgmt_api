@@ -28,14 +28,14 @@ handlers._userDataProcessing.get = (( data, callback ) => {
 
 
 handlers._userDataProcessing.put = (( data, callback ) => {
-
-    console.log('[HANDLER.js] PUT METHOD SUCCESS!!');
+    // Update file
+    _data.update('users', data.payload, callback);
 });
 
 
 handlers._userDataProcessing.delete = (( data, callback ) => {
     // Delete user file
-    _data.delete('users',data, callback)
+    _data.delete('users',data, callback);
 });
 
 
