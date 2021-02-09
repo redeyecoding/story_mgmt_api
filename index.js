@@ -1,7 +1,9 @@
 /*
     Base api
 */
+'use strict'
 
+// Dependencies
 const http = require('http');
 const https = require('https');
 const url = require('url');
@@ -10,7 +12,8 @@ const { StringDecoder } = require('string_decoder');
 const decoder = new StringDecoder('utf8');
 const querystring = require('querystring');
 const config = require('./config');
-const utils = require('./utils/util');
+const util = require('./utils/util');
+
 
 
 
@@ -51,24 +54,23 @@ const universalServerUtility = (( req, res ) => {
             // Assemble Data Object
             const data = {
                 'headers': headers,
-                'payload': buffer,
+                'payload': util.jsonParser(buffer),
                 'method': method,
                 'queryStrings': querystring,
-                'path': trimmedPath
+                'path': trimmedPath                
             };
 
             // FIND HANDLER
             const foundHandler = router[trimmedPath] ? router[trimmedPath] : handlers.notFound;
-        
-            foundHandler(data, (statusCode, err) => {
+            
+            foundHandler(data, (statusCode, err) => {                
                 if (!err) {
                     console.log(statusCode)
                 } else {
                     console.log(statusCode, err)
                 }
             });
-        });
-    
+        });   
     
             // console.log(parseUrl);
             // console.log(trimmedPath);
