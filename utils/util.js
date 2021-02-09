@@ -2,6 +2,7 @@
     Utilties
 */
 'use strict'
+
 // Dependencies
 require('../https/config');
 const crypto = require("crypto")
