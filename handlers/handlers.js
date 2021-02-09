@@ -1,6 +1,7 @@
 /*
     Handlers
 */
+'use strict'
 
 // Dependencies
 const _data = require('../lib/data');
