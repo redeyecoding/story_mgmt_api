@@ -23,6 +23,7 @@ handlers._userDataProcessing = {};
 
 
 // Users
+
 handlers.users = (( data, callback ) => {
     // Check for valid inbound request
     const validRequests = ['get','post','delete', 'put'];
@@ -171,9 +172,18 @@ handlers._token = {};
 
 // GET - Create token for logged in user
 // @Acces public
-//
+// Required: phoneNumber, password
 handlers._token.get =((dir, data, callback) => {
-    
+    const phoneNumber = data.payload.phoneNumber;
+
+    // Check if phone is valid and make sure it is attached to an existing user
+            // @TODO Create function to check if phoneNumber is assigned to existing user ( returns Boolen )
+
+                // If attached to an existing user, provide token
+                    // @TODO create tokenGenerator
+
+
+
 });
 
 
