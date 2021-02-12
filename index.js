@@ -49,14 +49,14 @@ const universalServerUtility = (( req, res ) => {
         // Decode the Inbound Stream
         let buffer = '';
         req.on('data', chunk => buffer += decoder.write(chunk));
-        
+       
         req.on('end', () => {
             // Assemble Data Object
             const data = {
                 'headers': headers,
                 'payload': util.jsonParser(buffer),
                 'method': method,
-                'queryStrings': querystring,
+                'queryStrings': queryStrings,
                 'path': trimmedPath                
             };
 
@@ -69,7 +69,11 @@ const universalServerUtility = (( req, res ) => {
                 } else {
                     console.log(statusCode, err)
                 }
-            });
+                const payload = data['payload'];
+                res.setHeader('Content-Type', 'application/json');
+                res.writeHead(statusCode);
+                res.end(err);
+            }); 
         });   
     
             // console.log(parseUrl);
@@ -80,9 +84,7 @@ const universalServerUtility = (( req, res ) => {
             // console.log(queryStrings);
             //  console.log('CURRENT path', __dirname)
 //            console.log(utils.jsonParser('{"fsf":"fsfsf"}'))
-            
-        res.end('SUCCESS');
-    
+
 });
 
 
@@ -97,7 +99,8 @@ httpsServer.listen(
 
 // Router
 const router = {
-    'users': handlers.users
+    'users': handlers.users,
+    'token': handlers.token
 };
 
 
