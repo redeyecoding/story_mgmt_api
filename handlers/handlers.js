@@ -168,7 +168,19 @@ handlers._userDataProcessing.delete = (( data, callback ) => {
 });
 
 
-handlers._token = {};
+// Token Handler Object
+handlers.token = (( id, callback ) => {
+    // Check for valid inbound request
+    const validRequests = ['get','post','delete', 'put'];
+    const method = data.method;
+
+    if ( validRequests.includes(method) ) {
+        handlers._token[method]( id, callback );
+    } else {
+        callback(400, { 'Error': 'Invalid request' });
+    }
+});
+
 
 // GET - Create token for logged in user
 // @Acces public
