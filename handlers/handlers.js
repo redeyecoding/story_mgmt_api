@@ -89,11 +89,11 @@ handlers._userDataProcessing.post = (( data, callback ) => {
             const hashPassword = util.generateHashPassword(password);
     
             let userData = {
-                phoneNumber :phoneNumber,
-                firstName: firstName,
-                lastName: lastName,
-                tosAgreement: tosAgreement,
-                password: hashPassword
+                    phoneNumber :phoneNumber,
+                    firstName: firstName,
+                    lastName: lastName,
+                    tosAgreement: tosAgreement,
+                    hashPassword: hashPassword
             };
     
             userData = JSON.stringify(userData);
@@ -168,28 +168,61 @@ handlers._userDataProcessing.delete = (( data, callback ) => {
 });
 
 
+
+
+
 // Token Handler Object
-handlers.token = (( id, callback ) => {
+handlers.token = (( data, callback ) => {
     // Check for valid inbound request
     const validRequests = ['get','post','delete', 'put'];
     const method = data.method;
 
     if ( validRequests.includes(method) ) {
-        handlers._token[method]( id, callback );
+        handlers._token[method]( data, callback );
     } else {
         callback(400, { 'Error': 'Invalid request' });
     }
 });
 
+// Define _token object
+handlers._token = {};
 
 // GET - Create token for logged in user
 // @Acces public
 // Required: phoneNumber, password
-handlers._token.get =((dir, data, callback) => {
-    const phoneNumber = data.payload.phoneNumber;
+handlers._token.post = ((data, callback) => {
+    const phoneNumber = typeof(data.payload.phoneNumber) === 'string' && 
+        data.payload.phoneNumber.trim().length === 10 ? 
+        data.payload.phoneNumber : 
+        false;
 
+    const password = typeof(data.payload.password) === 'string' && 
+        data.payload.password.trim().length > 6 ? 
+        data.payload.password : 
+        false;
+    
     // Check if phone is valid and make sure it is attached to an existing user
             // @TODO Create function to check if phoneNumber is assigned to existing user ( returns Boolen )
+    if (password && phoneNumber) {
+        // look up user and validate phone number
+        _data.read('users', phoneNumber, ((statusCode, data) => {
+            if (statusCode !== 200) {
+                callback(data.code, data);
+            } else {
+                 // provide token
+                 const token = 'TOKEN1234566789EFS';
+                 //@TODO FINISH TOKEN GENERATOR
+                 _data.create('tokens', phoneNumber, token )
+                
+                callback(statusCode, data);
+            }
+            // Create a json file labeled with the user's token
+        }));
+
+    } else {
+        callback(400,util.errorUtility(400, 'Missing required fields', 'Authentication'));
+    }
+
 
                 // If attached to an existing user, provide token
                     // @TODO create tokenGenerator
