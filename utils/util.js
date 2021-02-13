@@ -10,15 +10,16 @@ const secret = process.env.HASH_PASSWORD_SECRET;
 
 
 
-// Error utility
+// JSON parser
 const jsonParser = string => {
     if (string === '') {
         null
     } else {
        return JSON.parse(string)
-    }
-    
+    }   
 };
+
+// Error utility
 const errorUtility = (( statusCode, message, errorType=null ) => {
     // Assemble statusMessage Object
     const errorObject = {
@@ -34,7 +35,7 @@ const errorUtility = (( statusCode, message, errorType=null ) => {
     };
 
     const jsonResponse = statusCode === 200 ? errorObject.ok : errorObject.error;
-    return JSON.stringify(jsonResponse);
+    return jsonResponse;
 });
 
 
