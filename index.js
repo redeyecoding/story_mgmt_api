@@ -63,16 +63,13 @@ const universalServerUtility = (( req, res ) => {
             // FIND HANDLER
             const foundHandler = router[trimmedPath] ? router[trimmedPath] : handlers.notFound;
             
-            foundHandler(data, (statusCode, err) => {                
-                if (!err) {
-                    console.log(statusCode)
-                } else {
-                    console.log(statusCode, err)
-                }
-                const payload = data['payload'];
+            foundHandler(data, (statusCode, payload) => {
+                delete payload.hashPassword;
+                payload = JSON.stringify(payload);
+
                 res.setHeader('Content-Type', 'application/json');
                 res.writeHead(statusCode);
-                res.end(err);
+                res.end(payload);
             }); 
         });   
     
