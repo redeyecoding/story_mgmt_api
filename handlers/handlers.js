@@ -3,6 +3,7 @@
 */
 'use strict'
 
+const { Console } = require('console');
 // Dependencies
 const _data = require('../lib/data');
 const util = require('../utils/util');
@@ -89,18 +90,21 @@ handlers._userDataProcessing.post = (( data, callback ) => {
             const hashPassword = util.generateHashPassword(password);
     
             let userData = {
-                    phoneNumber :phoneNumber,
-                    firstName: firstName,
-                    lastName: lastName,
-                    tosAgreement: tosAgreement,
-                    hashPassword: hashPassword
+                id: util.tokenGenerator(),
+                phoneNumber :phoneNumber,
+                firstName: firstName,
+                lastName: lastName,
+                tosAgreement: tosAgreement,
+                hashPassword: hashPassword,
+                token: util.tokenObjectBuilder(),
             };
     
             userData = JSON.stringify(userData);
             // Open the file
-            _data.create('users', phoneNumber, userData, callback)
+            _data.create('users', phoneNumber, userData, callback);
     
         } else {
+            console.log(callback)
             callback(400, 
                 util.errorUtility(400, 'Missing required fields', 'fileProcessing' ));
         };
@@ -108,13 +112,9 @@ handlers._userDataProcessing.post = (( data, callback ) => {
 
 
 handlers._userDataProcessing.put = (( data, callback ) => {
-    // Verify that the user is authenticate    
-    if (true) {
-        // Extract data from user request
-        // @TODO CREATE A UTILITY FOR THIS
-        // Validate information recieved from the user
-        const tosAgreement = data.payload.tosAgreement ? data.payload.tosAgreement : false;
-
+    // Check if user is authenticated
+    _data.read('users', data.payload.phoneNumber, ((err, userData) => {
+                // Verify that the user is authenticated
         const phoneNumber = typeof(data.payload.phoneNumber) === 'string' && 
             data.payload.phoneNumber.trim().length === 10 ? 
             data.payload.phoneNumber : 
@@ -134,26 +134,26 @@ handlers._userDataProcessing.put = (( data, callback ) => {
             data.payload.password.trim().length > 6 ? 
             data.payload.password : 
             false;
+      
+        const { validFrom } = userData.token;
+        const tokenIsValid = util.tokenValidator(validFrom);
+        
+        if ( tokenIsValid ) {
+            // Update Contents
+            let updatedToken = {
+                ...userData,
+                token: util.tokenObjectBuilder(),
+                firstName:  data.payload.firstName,
+                lastName:  data.payload.lastName,
+            };
+            updatedToken = JSON.stringify(updatedToken);
 
-
-        // @TODO CREATE A UTILITY FOR THIS
-        let userData = {
-            phoneNumber :phoneNumber,
-            firstName: firstName,
-            lastName: lastName,
-            tosAgreement: tosAgreement,
-        };
-
-        //@TODO CREATE LOGIC FOR HOLDING EXISITING PASSWORD
-        userData = JSON.stringify(userData);
-
-        // Update file
-        _data.update('users',phoneNumber, userData, callback);
-
-} else {
-    callback(403,util.errorUtility(403, 'Forbidden', 'Authorization' ));
-} 
-
+            // Update file
+            _data.update('users',phoneNumber, updatedToken, callback);
+        } else {
+            callback(403,util.errorUtility(403, 'Forbidden', 'Authorization' ));
+        }       
+    }));
 });
 
 
@@ -187,7 +187,7 @@ handlers.token = (( data, callback ) => {
 // Define _token object
 handlers._token = {};
 
-// GET - Create token for logged in user
+// POST - Create token for logged in user
 // @Acces public
 // Required: phoneNumber, password
 handlers._token.post = ((data, callback) => {
@@ -201,26 +201,32 @@ handlers._token.post = ((data, callback) => {
         data.payload.password : 
         false;
     
+
     // Check if phone is valid and make sure it is attached to an existing user
             // @TODO Create function to check if phoneNumber is assigned to existing user ( returns Boolen )
     if (password && phoneNumber) {
         // look up user and validate phone number
-        _data.read('users', phoneNumber, ((statusCode, data) => {
-            if (statusCode !== 200) {
-                callback(data.code, data);
-            } else {
-                 // provide token
-                 const token = util.tokenGenerator();
-                 _data.create('tokens', phoneNumber, token );
-                
-                callback(statusCode, data);
-            }
-            // Create a json file labeled with the user's token
+        _data.read('users', phoneNumber, ((statusCode, userData) => {
+            // Update the token for the user    
+            let updatedToken = {
+                ...userData,
+                token: util.tokenObjectBuilder()
+            };
+            updatedToken = JSON.stringify(updatedToken);
+            console.log(updatedToken)
+            _data.update( 'users', phoneNumber, updatedToken, callback);
         }));
 
     } else {
-        callback(400,util.errorUtility(400, 'Missing required fields', 'Authentication'));
+        callback(400,util.errorUtility(400, 'Missing required field(s)', 'Authorization' ));
     }
+
+
+                // If attached to an existing user, provide token
+                    // @TODO create tokenGenerator
+
+
+
 });
 
 
