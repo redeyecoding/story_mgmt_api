@@ -70,7 +70,7 @@ const generateHashPassword = userpassword => {
 // Token Generator
 const tokenRounds = 40;
 const tokenGenerator = (rounds=tokenRounds) => {
-    const chars = 'abcdefghijklmnopqrstuvwxyz123456789)(*&^%$#@!ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const chars = 'abcdefghijklmnopqrstuvwxyz123456789)(*ABCDEFGHIJKLMNOPQRSTUVWXYZ';
     let token = '';
 
     for (let i=0; i <= rounds; i++) {
@@ -82,10 +82,10 @@ const tokenGenerator = (rounds=tokenRounds) => {
 
 
 // Token Validator
-const tokenValidator = (( startTime, expires=60 ) => {
+const tokenValidator = (( startTime, expiresIn=3600 ) => {
     let mill = Date.now() - startTime;
     let timelapse = Math.floor(mill / 1000 );
-    let tokenIsValid = timelapse >= expires ? false : true;
+    let tokenIsValid = timelapse >= expiresIn ? false : true;
     return tokenIsValid;
  });
 
