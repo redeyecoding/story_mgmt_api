@@ -65,10 +65,24 @@ const generateHashPassword = userpassword => {
     return hash;
 };
 
+// Token Generator
+const tokenRounds = 40;
+const tokenGenerator = rounds=tokenRounds => {
+    const chars = 'abcdefghijklmnopqrstuvwxyz123456789)(*&^%$#@!ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    let token = '';
+
+    for (let i=0; i <= rounds; i++) {
+        let randomNumber = Math.floor(Math.random() * chars.length);
+        token += chars[randomNumber];
+    }
+    return token;
+};
+
 module.exports = {
     'jsonParser': jsonParser,
     'errorUtility': errorUtility,
-    'generateHashPassword': generateHashPassword
+    'generateHashPassword': generateHashPassword,
+    'tokenGenerator': tokenGenerator,
 };
 
 
