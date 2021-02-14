@@ -211,7 +211,6 @@ handlers._token.post = ((data, callback) => {
             } else {
                  // provide token
                  const token = util.tokenGenerator();
-                 //@TODO FINISH TOKEN GENERATOR
                  _data.create('tokens', phoneNumber, token );
                 
                 callback(statusCode, data);
@@ -222,13 +221,6 @@ handlers._token.post = ((data, callback) => {
     } else {
         callback(400,util.errorUtility(400, 'Missing required fields', 'Authentication'));
     }
-
-
-                // If attached to an existing user, provide token
-                    // @TODO create tokenGenerator
-
-
-
 });
 
 
