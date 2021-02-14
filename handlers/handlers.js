@@ -38,7 +38,7 @@ handlers.users = (( data, callback ) => {
 });
 
 
-// Read user data
+// GET Read user data
 // required: phoneNumber, id
 // @Access Private
 // @TODO only authenticated users should be able to read their data and only their data.
@@ -56,10 +56,11 @@ handlers._userDataProcessing.get = (( data, callback ) => {
 
 
 
-// Update files
+// POST - Update files
 // Required: phone number
+// @desc User Login
 // optional: firstName, lastName, email
-// @TODO Only authenticated users can edit their-own accounts; no one elses.
+// @Access Public
 handlers._userDataProcessing.post = (( data, callback ) => {
     // Create user profile
         //@TODO Move this to Handlers as users should be authenticated before file processing
@@ -111,7 +112,9 @@ handlers._userDataProcessing.post = (( data, callback ) => {
         };
 });
 
-// @TODO
+// PUT - 
+// @Desc User updating exiting information
+// @Access Private
 handlers._userDataProcessing.put = (( data, callback ) => {
     // Check if user is authenticated
     _data.read('users', data.payload.phoneNumber, ((err, userData) => {
@@ -160,8 +163,9 @@ handlers._userDataProcessing.put = (( data, callback ) => {
 });
 
 
-// Delete file from directory
+// DELETE file from directory
 // Required: phone number and id ( valid token )
+// @Desc User deleting content
 // @TODO Only authenticated users can delete their accounts;no one elses.
 handlers._userDataProcessing.delete = (( data, callback ) => {
     // Extract userData
