@@ -43,6 +43,7 @@ handlers.users = (( data, callback ) => {
 // @Access Private
 // @TODO only authenticated users should be able to read their data and only their data.
 handlers._userDataProcessing.get = (( data, callback ) => {
+    
     const phoneNumber = typeof(data.queryStrings.phoneNumber) === 'string' && 
         data.queryStrings.phoneNumber.trim().length === 10 ? 
         data.queryStrings.phoneNumber : 
@@ -110,7 +111,7 @@ handlers._userDataProcessing.post = (( data, callback ) => {
         };
 });
 
-
+// @TODO
 handlers._userDataProcessing.put = (( data, callback ) => {
     // Check if user is authenticated
     _data.read('users', data.payload.phoneNumber, ((err, userData) => {
@@ -134,11 +135,13 @@ handlers._userDataProcessing.put = (( data, callback ) => {
             data.payload.password.trim().length > 6 ? 
             data.payload.password : 
             false;
-      
+        
+        const userId = data.queryStrings.id;
         const { validFrom } = userData.token;
         const tokenIsValid = util.tokenValidator(validFrom);
         
-        if ( tokenIsValid ) {
+        // Check validity for user ID and user token
+        if ( tokenIsValid && userId === userData.id ) {
             // Update Contents
             let updatedToken = {
                 ...userData,
