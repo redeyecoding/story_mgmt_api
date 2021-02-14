@@ -65,9 +65,11 @@ const generateHashPassword = userpassword => {
     return hash;
 };
 
+
+
 // Token Generator
 const tokenRounds = 40;
-const tokenGenerator = rounds=tokenRounds => {
+const tokenGenerator = (rounds=tokenRounds) => {
     const chars = 'abcdefghijklmnopqrstuvwxyz123456789)(*&^%$#@!ABCDEFGHIJKLMNOPQRSTUVWXYZ';
     let token = '';
 
@@ -78,11 +80,39 @@ const tokenGenerator = rounds=tokenRounds => {
     return token;
 };
 
+
+// Token Validator
+const tokenValidator = (( startTime, expires=60 ) => {
+    let mill = Date.now() - startTime;
+    let timelapse = Math.floor(mill / 1000 );
+    let tokenIsValid = timelapse >= expires ? false : true;
+    return tokenIsValid;
+ });
+
+
+ // Token Object builder
+ const tokenObjectBuilder = () => {
+    // Set expiration time for token
+    const startTime = Date.now();
+    const milliseconds = Date.now() - startTime;
+    const seconds = 3600;
+    const expires = Math.floor(milliseconds / 1000) + seconds;
+
+    const tokenObject = {
+        token: tokenGenerator(),
+        validFrom: startTime,
+        expires: expires
+    };
+    return tokenObject;
+ };
+
 module.exports = {
     'jsonParser': jsonParser,
     'errorUtility': errorUtility,
     'generateHashPassword': generateHashPassword,
     'tokenGenerator': tokenGenerator,
+    'tokenValidator': tokenValidator,
+    'tokenObjectBuilder': tokenObjectBuilder
 };
 
 
