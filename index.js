@@ -64,9 +64,12 @@ const universalServerUtility = (( req, res ) => {
             const foundHandler = router[trimmedPath] ? router[trimmedPath] : handlers.notFound;
             
             foundHandler(data, (statusCode, payload) => {
+                // Hide hashPassword, id and token
                 delete payload.hashPassword;
-                payload = JSON.stringify(payload);
+                delete payload.token;
+                delete payload.id;
 
+                payload = JSON.stringify(payload);
                 res.setHeader('Content-Type', 'application/json');
                 res.writeHead(statusCode);
                 res.end(payload);
