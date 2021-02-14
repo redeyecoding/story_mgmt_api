@@ -210,9 +210,9 @@ handlers._token.post = ((data, callback) => {
                 callback(data.code, data);
             } else {
                  // provide token
-                 const token = 'TEST_____TOKEN1234566789EFS';
+                 const token = util.tokenGenerator();
                  //@TODO FINISH TOKEN GENERATOR
-                 _data.create('tokens', phoneNumber, token )
+                 _data.create('tokens', phoneNumber, token );
                 
                 callback(statusCode, data);
             }
