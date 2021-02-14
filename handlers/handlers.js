@@ -144,8 +144,10 @@ handlers._userDataProcessing.put = (( data, callback ) => {
         const tokenIsValid = util.tokenValidator(validFrom);
         
         // Check validity for user ID and user token
+
         if ( tokenIsValid && userId === userData.id ) {
             // Update Contents
+                // @TODO Make this into a conditional
             let updatedToken = {
                 ...userData,
                 token: util.tokenObjectBuilder(),
