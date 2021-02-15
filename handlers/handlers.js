@@ -39,19 +39,40 @@ handlers.users = (( data, callback ) => {
 
 
 // GET Read user data
-// required: phoneNumber, id
+// required: id, token
 // @Access Private
 // @TODO only authenticated users should be able to read their data and only their data.
 handlers._userDataProcessing.get = (( data, callback ) => {
-    
+    const userId = data.headers.id;
+
     const phoneNumber = typeof(data.queryStrings.phoneNumber) === 'string' && 
         data.queryStrings.phoneNumber.trim().length === 10 ? 
         data.queryStrings.phoneNumber : 
-        false;
-    
-        // @TODO Validate authenticated users
-        // check if phone number
-        _data.read( 'users', phoneNumber, callback );
+        false;    
+
+    if ( phoneNumber && userId ) {
+        _data.read('users', phoneNumber, ((statusCode, payload) => { 
+
+            if (statusCode === 200) {
+                // Check if user is authorized.
+                const authorized = util.checkValidity(data, payload, userId); 
+                
+                if ( authorized ) {        
+                     // @TODO Validate authenticated users
+                    // check if phone number
+                    _data.read( 'users', phoneNumber, callback );
+            
+                } else {
+                    callback(403, util.errorUtility(403, 'Unauthorized', 'Authentication'));
+                }
+
+            } else{
+                callback(403, util.errorUtility(403, 'Unauthorized', 'Authentication'));
+            }
+        }));
+    } else {
+        callback(403, util.errorUtility(403, 'Unauthorized', 'Authentication'));
+    }
 });
 
 
@@ -106,63 +127,57 @@ handlers._userDataProcessing.post = (( data, callback ) => {
             _data.create('users', phoneNumber, userData, callback);
     
         } else {
-            console.log(callback)
             callback(400, 
                 util.errorUtility(400, 'Missing required fields', 'fileProcessing' ));
         };
 });
 
+
 // PUT - 
 // @Desc User updating exiting information
 // @Access Private
 handlers._userDataProcessing.put = (( data, callback ) => {
-    // Check if user is authenticated
-    _data.read('users', data.payload.phoneNumber, ((err, userData) => {
-                // Verify that the user is authenticated
-        const phoneNumber = typeof(data.payload.phoneNumber) === 'string' && 
-            data.payload.phoneNumber.trim().length === 10 ? 
-            data.payload.phoneNumber : 
-            false;
+    const phoneNumber = typeof(data.payload.phoneNumber) === 'string' && 
+        data.payload.phoneNumber.trim().length === 10 ? 
+        data.payload.phoneNumber : 
+        false;
 
-        const firstName = typeof(data.payload.firstName) === 'string' && 
-            data.payload.firstName.trim().length > 0 ? 
-            data.payload.firstName : 
-            false;
+    const firstName = typeof(data.payload.firstName) === 'string' && 
+        data.payload.firstName.trim().length > 0 ? 
+        data.payload.firstName : 
+        false;
 
-        const lastName = typeof(data.payload.lastName) === 'string' && 
-            data.payload.lastName.trim().length > 0 ? 
-            data.payload.lastName : 
-            false;
+    const lastName = typeof(data.payload.lastName) === 'string' && 
+        data.payload.lastName.trim().length > 0 ? 
+        data.payload.lastName : 
+        false;
 
-        const password = typeof(data.payload.password) === 'string' && 
-            data.payload.password.trim().length > 6 ? 
-            data.payload.password : 
-            false;
+    // get the data ( Read )
+    _data.read('users', phoneNumber, ((statusCode, payload) => { 
+        if (statusCode === 200) {
+            // Check if user is authorized.
+            const authorized = util.checkValidity(data, payload); 
+
+            if ( authorized ) {        
+                let updatedToken = {
+                    ...payload,
+                    token: util.tokenObjectBuilder(),
+                    firstName: data.payload.firstName,
+                    lastName: data.payload.lastName,
+                };
+                updatedToken = JSON.stringify(updatedToken);
+                // Update file
+                _data.update('users',phoneNumber, updatedToken, callback);
         
-        const userId = data.queryStrings.id;
-        const { validFrom } = userData.token;
-        const tokenIsValid = util.tokenValidator(validFrom);
-        
-        // Check validity for user ID and user token
-
-        if ( tokenIsValid && userId === userData.id ) {
-            // Update Contents
-                // @TODO Make this into a conditional
-            let updatedToken = {
-                ...userData,
-                token: util.tokenObjectBuilder(),
-                firstName:  data.payload.firstName,
-                lastName:  data.payload.lastName,
-            };
-            updatedToken = JSON.stringify(updatedToken);
-
-            // Update file
-            _data.update('users',phoneNumber, updatedToken, callback);
-        } else {
-            callback(403,util.errorUtility(403, 'Forbidden', 'Authorization' ));
-        }       
+            } else {
+                callback(403, util.errorUtility(403, 'Unauthorized', 'Authentication'));
+            }            
+        } else{
+            callback(403, util.errorUtility(403, 'Unauthorized', 'Authentication'));
+        }
     }));
 });
+
 
 
 // DELETE file from directory
@@ -170,10 +185,35 @@ handlers._userDataProcessing.put = (( data, callback ) => {
 // @Desc User deleting content
 // @TODO Only authenticated users can delete their accounts;no one elses.
 handlers._userDataProcessing.delete = (( data, callback ) => {
-    // Extract userData
-    const phoneNumber = data.payload.phoneNumber
-    // Delete user file
-    _data.delete('users',phoneNumber, callback);
+    const userId = data.headers.id;
+
+    const phoneNumber = typeof(data.queryStrings.phoneNumber) === 'string' && 
+        data.queryStrings.phoneNumber.trim().length === 10 ? 
+        data.queryStrings.phoneNumber : 
+        false;    
+
+    if ( phoneNumber && userId ) {
+        _data.read('users', phoneNumber, ((statusCode, payload) => { 
+
+            if (statusCode === 200) {
+                // Check if user is authorized.
+                const authorized = util.checkValidity(data, payload, userId); 
+                
+                if ( authorized ) {        
+                     // Delete user file
+                    _data.delete('users',phoneNumber, callback);
+            
+                } else {
+                    callback(403, util.errorUtility(403, 'Unauthorized', 'Authentication'));
+                }
+                            
+            } else{
+                callback(403, util.errorUtility(403, 'Unauthorized', 'Authentication'));
+            }
+        }));
+    } else {
+        callback(403, util.errorUtility(403, 'Unauthorized', 'Authentication'));
+    }
 });
 
 
@@ -222,20 +262,12 @@ handlers._token.post = ((data, callback) => {
                 token: util.tokenObjectBuilder()
             };
             updatedToken = JSON.stringify(updatedToken);
-            console.log(updatedToken)
             _data.update( 'users', phoneNumber, updatedToken, callback);
         }));
 
     } else {
         callback(400,util.errorUtility(400, 'Missing required field(s)', 'Authorization' ));
     }
-
-
-                // If attached to an existing user, provide token
-                    // @TODO create tokenGenerator
-
-
-
 });
 
 
