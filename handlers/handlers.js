@@ -8,7 +8,7 @@ const { Console } = require('console');
 const _data = require('../lib/data');
 const util = require('../utils/util');
 
-
+// @TODO DIRECTORY WILL BE CHANGED TO SOMETHING MORE DYNAMIC
 
 // Handler object
 const handlers = {};
@@ -24,7 +24,6 @@ handlers._userDataProcessing = {};
 
 
 // Users
-
 handlers.users = (( data, callback ) => {
     // Check for valid inbound request
     const validRequests = ['get','post','delete', 'put'];
@@ -42,6 +41,7 @@ handlers.users = (( data, callback ) => {
 // required: id, token
 // @Access Private
 // @TODO only authenticated users should be able to read their data and only their data.
+
 handlers._userDataProcessing.get = (( data, callback ) => {
     const userId = data.headers.id;
 
