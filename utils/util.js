@@ -10,6 +10,7 @@ const secret = process.env.HASH_PASSWORD_SECRET;
 const _data = require('../lib/data');
 
 
+// @TODO REFACTOR THIS CODE ( SPLIT UP "like" functions into separate utility files)
 
 // JSON parser
 const jsonParser = string => {
