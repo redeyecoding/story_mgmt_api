@@ -40,8 +40,6 @@ handlers.users = (( data, callback ) => {
 // GET Read user data
 // required: id, token
 // @Access Private
-// @TODO only authenticated users should be able to read their data and only their data.
-
 handlers._userDataProcessing.get = (( data, callback ) => {
     const userId = data.headers.id;
 
@@ -84,7 +82,6 @@ handlers._userDataProcessing.get = (( data, callback ) => {
 // @Access Public
 handlers._userDataProcessing.post = (( data, callback ) => {
     // Create user profile
-        //@TODO Move this to Handlers as users should be authenticated before file processing
         const tosAgreement = data.payload.tosAgreement ? data.payload.tosAgreement : false;
 
         const phoneNumber = typeof(data.payload.phoneNumber) === 'string' && 
@@ -183,7 +180,6 @@ handlers._userDataProcessing.put = (( data, callback ) => {
 // DELETE file from directory
 // Required: phone number and id ( valid token )
 // @Desc User deleting content
-// @TODO Only authenticated users can delete their accounts;no one elses.
 handlers._userDataProcessing.delete = (( data, callback ) => {
     const userId = data.headers.id;
 
@@ -252,7 +248,6 @@ handlers._token.post = ((data, callback) => {
     
 
     // Check if phone is valid and make sure it is attached to an existing user
-            // @TODO Create function to check if phoneNumber is assigned to existing user ( returns Boolen )
     if (password && phoneNumber) {
         // look up user and validate phone number
         _data.read('users', phoneNumber, ((statusCode, userData) => {
