@@ -5,8 +5,9 @@
 
 // Dependencies
 require('../https/config');
-const crypto = require("crypto")
+const crypto = require("crypto");
 const secret = process.env.HASH_PASSWORD_SECRET;
+const _data = require('../lib/data');
 
 
 
@@ -106,13 +107,26 @@ const tokenValidator = (( startTime, expiresIn=3600 ) => {
     return tokenObject;
  };
 
+
+ // User Authorization checker
+ // @Desc This checked to see if a user is authorized to access protected routes.
+ const checkValidity = (( data, userData, userId=data.queryStrings.id) => {
+    // Extract token, userId - check if both are valid
+    const { validFrom } = userData.token;    
+    const tokenIsValid = tokenValidator(validFrom);
+    const authorized = tokenIsValid && userId === userData.id ? true : false; 
+    return authorized
+});
+
+
 module.exports = {
     'jsonParser': jsonParser,
     'errorUtility': errorUtility,
     'generateHashPassword': generateHashPassword,
     'tokenGenerator': tokenGenerator,
     'tokenValidator': tokenValidator,
-    'tokenObjectBuilder': tokenObjectBuilder
+    'tokenObjectBuilder': tokenObjectBuilder,
+    'checkValidity': checkValidity
 };
 
 
