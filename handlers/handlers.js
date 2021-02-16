@@ -57,7 +57,13 @@ handlers._userDataProcessing.get = (( data, callback ) => {
                 if ( authorized ) {        
                      // @TODO Validate authenticated users
                     // check if phone number
-                    _data.read( 'users', phoneNumber, callback );
+                    _data.read( 'users', phoneNumber, ((statusCode, tokenData) => {
+                        if (statusCode === 200) {
+                            callback(statusCode, payload);
+                        } else {
+                            callback(403, util.errorUtility(403, 'Unauthorized', 'Authentication'));
+                        }
+                    }) );
             
                 } else {
                     callback(403, util.errorUtility(403, 'Unauthorized', 'Authentication'));
@@ -167,7 +173,13 @@ handlers._userDataProcessing.put = (( data, callback ) => {
                     };
                     updatedToken = JSON.stringify(updatedToken);
                     // Update file
-                    _data.update('users',phoneNumber, updatedToken, callback);
+                    _data.update('users',phoneNumber, updatedToken, ((statusCode, tokenData) => {
+                        if ( statusCode === 200 ) {
+                            callback(statusCode, payload);
+                        } else {
+                            callback(403, util.errorUtility(403, 'Unauthorized', 'Authentication'));
+                        }
+                    }));
             
                 } else {
                     callback(403, util.errorUtility(403, 'Unauthorized', 'Authentication'));
@@ -263,7 +275,14 @@ handlers._token.post = ((data, callback) => {
                 token: util.tokenObjectBuilder()
             };
             updatedToken = JSON.stringify(updatedToken);
-            _data.update( 'users', phoneNumber, updatedToken, callback);
+            _data.update( 'users', phoneNumber, updatedToken, ((statusCode, tokenData) => {
+                if ( statusCode === 200 ) {
+                    callback(statusCode, userData)
+                } else {
+                    callback(500, 
+                        util.errorUtility(500, 'Server Error: Could not write to file', 'fileProcessing'));
+                }
+            }));
         }));
 
     } else {
