@@ -3,7 +3,6 @@
 */
 'use strict'
 
-const { Console } = require('console');
 // Dependencies
 const _data = require('../lib/data');
 const util = require('../utils/util');
@@ -38,22 +37,22 @@ handlers.users = (( data, callback ) => {
 
 
 // GET Read user data
-// required: id, token
+// required: token
 // @Access Private
 handlers._userDataProcessing.get = (( data, callback ) => {
-    const userId = data.headers.id;
+    const token = data.headers.token;
 
     const phoneNumber = typeof(data.queryStrings.phoneNumber) === 'string' && 
         data.queryStrings.phoneNumber.trim().length === 10 ? 
         data.queryStrings.phoneNumber : 
         false;    
 
-    if ( phoneNumber && userId ) {
+    if ( phoneNumber && token ) {
         _data.read('users', phoneNumber, ((statusCode, payload) => { 
 
             if (statusCode === 200) {
                 // Check if user is authorized.
-                const authorized = util.checkValidity(data, payload, userId); 
+                const authorized = util.tokenValidator(token, payload); 
                 
                 if ( authorized ) {        
                      // @TODO Validate authenticated users
@@ -131,13 +130,16 @@ handlers._userDataProcessing.post = (( data, callback ) => {
 
 
 // PUT - 
+// Required: token
 // @Desc User updating exiting information
 // @Access Private
 handlers._userDataProcessing.put = (( data, callback ) => {
-    const phoneNumber = typeof(data.payload.phoneNumber) === 'string' && 
-        data.payload.phoneNumber.trim().length === 10 ? 
-        data.payload.phoneNumber : 
-        false;
+    const token = data.headers.token;
+
+    const phoneNumber = typeof(data.queryStrings.phoneNumber) === 'string' && 
+        data.queryStrings.phoneNumber.trim().length === 10 ? 
+        data.queryStrings.phoneNumber : 
+        false;  
 
     const firstName = typeof(data.payload.firstName) === 'string' && 
         data.payload.firstName.trim().length > 0 ? 
@@ -150,29 +152,33 @@ handlers._userDataProcessing.put = (( data, callback ) => {
         false;
 
     // get the data ( Read )
-    _data.read('users', phoneNumber, ((statusCode, payload) => { 
-        if (statusCode === 200) {
-            // Check if user is authorized.
-            const authorized = util.checkValidity(data, payload); 
-
-            if ( authorized ) {        
-                let updatedToken = {
-                    ...payload,
-                    token: util.tokenObjectBuilder(),
-                    firstName: data.payload.firstName,
-                    lastName: data.payload.lastName,
-                };
-                updatedToken = JSON.stringify(updatedToken);
-                // Update file
-                _data.update('users',phoneNumber, updatedToken, callback);
-        
-            } else {
+    if (token) {
+        _data.read('users', phoneNumber, ((statusCode, payload) => { 
+            if (statusCode === 200) {
+                // Check if user is authorized.
+                const authorized = util.tokenValidator(token, payload); 
+    
+                if ( authorized ) {        
+                    let updatedToken = {
+                        ...payload,
+                        token: util.tokenObjectBuilder(),
+                        firstName: data.payload.firstName,
+                        lastName: data.payload.lastName,
+                    };
+                    updatedToken = JSON.stringify(updatedToken);
+                    // Update file
+                    _data.update('users',phoneNumber, updatedToken, callback);
+            
+                } else {
+                    callback(403, util.errorUtility(403, 'Unauthorized', 'Authentication'));
+                }            
+            } else{
                 callback(403, util.errorUtility(403, 'Unauthorized', 'Authentication'));
-            }            
-        } else{
-            callback(403, util.errorUtility(403, 'Unauthorized', 'Authentication'));
-        }
-    }));
+            }
+        }));
+    } else {
+        callback(403, util.errorUtility(403, 'Unauthorized', 'Authentication'));
+    }   
 });
 
 
@@ -181,19 +187,19 @@ handlers._userDataProcessing.put = (( data, callback ) => {
 // Required: phone number and id ( valid token )
 // @Desc User deleting content
 handlers._userDataProcessing.delete = (( data, callback ) => {
-    const userId = data.headers.id;
+    const token = data.headers.token;
 
     const phoneNumber = typeof(data.queryStrings.phoneNumber) === 'string' && 
         data.queryStrings.phoneNumber.trim().length === 10 ? 
         data.queryStrings.phoneNumber : 
         false;    
 
-    if ( phoneNumber && userId ) {
+    if ( phoneNumber && token ) {
         _data.read('users', phoneNumber, ((statusCode, payload) => { 
 
             if (statusCode === 200) {
                 // Check if user is authorized.
-                const authorized = util.checkValidity(data, payload, userId); 
+                const authorized = util.checkValidity(token, payload); 
                 
                 if ( authorized ) {        
                      // Delete user file
