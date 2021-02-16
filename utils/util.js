@@ -84,11 +84,17 @@ const tokenGenerator = (rounds=tokenRounds) => {
 
 
 // Token Validator
-const tokenValidator = (( startTime, expiresIn=3600 ) => {
-    let mill = Date.now() - startTime;
-    let timelapse = Math.floor(mill / 1000 );
-    let tokenIsValid = timelapse >= expiresIn ? false : true;
-    return tokenIsValid;
+const tokenValidator = (( token, payload, expiresIn=3600 ) => {
+    // verify if token provided is valid
+    const startTime = token === payload.token.token ? payload.token.validFrom : false;
+
+    if (startTime) {
+        const mill = Date.now() - startTime;
+        const timelapse = Math.floor(mill / 1000 );
+        const tokenIsValid = timelapse >= expiresIn ? false : true;
+        return tokenIsValid;
+    }
+    return false
  });
 
 
