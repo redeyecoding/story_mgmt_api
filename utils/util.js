@@ -93,12 +93,13 @@ const tokenValidator = (( token, payload, expiresIn=3600 ) => {
         const timelapse = Math.floor(mill / 1000 );
         const tokenIsValid = timelapse >= expiresIn ? false : true;
         return tokenIsValid;
-    }
-    return false
+    };
+    return false;
  });
 
 
  // Token Object builder
+ // @desc used for building initial token object.
  const tokenObjectBuilder = () => {
     // Set expiration time for token
     const startTime = Date.now();
