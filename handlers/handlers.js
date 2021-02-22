@@ -36,7 +36,7 @@ handlers.users = (( data, callback ) => {
 });
 
 
-// GET Read user data
+// GET /api/users?phoneNumber=<number>
 // required: token
 // @Access Private
 handlers._userDataProcessing.get = (( data, callback ) => {
@@ -80,7 +80,7 @@ handlers._userDataProcessing.get = (( data, callback ) => {
 
 
 
-// POST - Update files
+// POST - /api/users/
 // Required: phone number
 // @desc User Login
 // optional: firstName, lastName, email
@@ -135,7 +135,7 @@ handlers._userDataProcessing.post = (( data, callback ) => {
 });
 
 
-// PUT - 
+// PUT - /api/users/
 // Required: token
 // @Desc User updating exiting information
 // @Access Private
@@ -195,7 +195,7 @@ handlers._userDataProcessing.put = (( data, callback ) => {
 
 
 
-// DELETE file from directory
+// DELETE /api/users/
 // Required: phone number and id ( valid token )
 // @Desc User deleting content
 handlers._userDataProcessing.delete = (( data, callback ) => {
@@ -211,7 +211,7 @@ handlers._userDataProcessing.delete = (( data, callback ) => {
 
             if (statusCode === 200) {
                 // Check if user is authorized.
-                const authorized = util.checkValidity(token, payload); 
+                const authorized = util.tokenValidator(token, payload); 
                 
                 if ( authorized ) {        
                      // Delete user file
@@ -250,7 +250,7 @@ handlers.token = (( data, callback ) => {
 // Define _token object
 handlers._token = {};
 
-// POST - Create token for logged in user
+// POST - /token/
 // @Acces public
 // Required: phoneNumber, password
 handlers._token.post = ((data, callback) => {
