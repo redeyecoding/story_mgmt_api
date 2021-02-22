@@ -292,5 +292,51 @@ handlers._token.post = ((data, callback) => {
 
 
 
+// Initiate checks object
+handlers._checks = {};
+
+// POST - Create checks for logged in user
+// @Acces private
+// Required: phoneNumber, password
+handlers._checks.post = ((data, callback) => {
+
+});
+
+
+
+// GET - Get token
+// @Acces private
+// Required: token, checkId
+handlers._checks.get = ((data, callback) => {
+
+});
+
+
+
+
+
+// PUT - Edit check
+// @Acces private
+// Required: checkId
+handlers._checks.put = ((data, callback) => {
+
+});
+
+
+
+
+
+// DELETE - Delete check from check list
+// @Access private
+// Required: token
+handlers._checks.delete = ((data, callback) => {
+
+});
+
+
+
+
+
+
 
 module.exports = handlers;
