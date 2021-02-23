@@ -47,6 +47,7 @@ handlers._userDataProcessing.get = (( data, callback ) => {
         data.queryStrings.phoneNumber : 
         false;    
 
+    // @TODO fix this contidition to check for phone number from valid token
     if ( phoneNumber && token ) {
         _data.read('users', phoneNumber, ((statusCode, payload) => { 
 
@@ -184,8 +185,8 @@ handlers._userDataProcessing.put = (( data, callback ) => {
     // get the data ( Read )
     if (token) {
         _data.read(`tokens/${phoneNumber}`, token, ((statusCode, payload) => { 
-            console.log(payload)
-            // @TODO fix this condition
+        
+            // @TODO fix this contidition to check for phone number from valid token
             if (statusCode === 200) {
                 // Check if user is authorized.
                 const authorized = util.tokenValidator(token, payload); 
@@ -230,7 +231,9 @@ handlers._userDataProcessing.delete = (( data, callback ) => {
         data.queryStrings.phoneNumber.trim().length === 10 ? 
         data.queryStrings.phoneNumber : 
         false;    
-
+    
+    
+        // @TODO fix this contidition to check for phone number from valid token
     if ( phoneNumber && token ) {
         _data.read('users', phoneNumber, ((statusCode, payload) => { 
 
