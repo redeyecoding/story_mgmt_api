@@ -20,7 +20,7 @@ const httpsPort = process.env.NODE_ENV === 'staging'.trim() && httpsCert && http
 const config = {
     httpConfig: {
         'httpPort': httpPort,
-        'envMode': envMode
+        'envMode': envMode,        
     },
     httpsConfig: {
         'httpsPort': httpsPort,
@@ -29,7 +29,8 @@ const config = {
             cert: httpsCert,
             key: httpsKey
         }
-    }
+    },
+    hashingSecret: 'ljhsldjfhaushdASDHFIH284h@#$H%@IUHVWHRf89'
 };
 
 module.exports = config;
