@@ -72,7 +72,7 @@ const generateHashPassword = userpassword => {
 // Token Generator
 const tokenRounds = 40;
 const tokenGenerator = (rounds=tokenRounds) => {
-    const chars = 'abcdefghijklmnopqrstuvwxyz123456789)(*ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const chars = 'abcdefghijklmnopqrstuvwxyz123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
     let token = '';
 
     for (let i=0; i <= rounds; i++) {
