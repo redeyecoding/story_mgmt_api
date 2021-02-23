@@ -8,6 +8,7 @@ require('../https/config');
 const crypto = require("crypto");
 const secret = process.env.HASH_PASSWORD_SECRET;
 const _data = require('../lib/data');
+const config = require('../config');
 
 
 // @TODO REFACTOR THIS CODE ( SPLIT UP "like" functions into separate utility files)
@@ -40,33 +41,17 @@ const errorUtility = (( statusCode, message, errorType=null ) => {
     return jsonResponse;
 });
 
-
-// Hash password utility
-    // Generate Salt
-const genRandomString = length => {
-    return crypto.randomBytes(Math.ceil(length/2))
-            .toString('hex') /** convert to hexadecimal format */
-            .slice(0,length);   /** return required number of characters */
+const generateHashPassword = password => {
+    /** Hashing algorithm sha512 */
+    if (typeof(password) === 'string' && password.length > 0) {
+        const hash = crypto.createHmac('sha512', config.hashingSecret)
+            .update(password)
+            .digest('hex');
+        return hash;
+   } else {
+       return false;
+   }
 };
-
-
-const sha512 = (password, salt) => {
-    const hash = crypto.createHmac('sha512', salt); /** Hashing algorithm sha512 */
-    hash.update(password);
-    const value = hash.digest('hex');
-    return {
-        salt:salt,
-        passwordHash:value
-    };
-};
-
-const generateHashPassword = userpassword => {
-    const salt = genRandomString(16); /** Gives us salt of length 16 */
-    const passwordData = sha512(userpassword, salt);
-    const hash = passwordData.salt += passwordData.passwordHash
-    return hash;
-};
-
 
 
 // Token Generator
@@ -84,9 +69,11 @@ const tokenGenerator = (rounds=tokenRounds) => {
 
 
 // Token Validator
-const tokenValidator = (( token, payload, expiresIn=3600 ) => {
-    // verify if token provided is valid
-    const startTime = token === payload.token.token ? payload.token.validFrom : false;
+const tokenValidator = (( token, payload, phoneNumber, expiresIn=3600 ) => {
+    // verify if token provided is valid and matches existing user in database
+    const startTime = token === payload.token && phoneNumber === payload.phone 
+        ? payload.validFrom : 
+        false;
 
     if (startTime) {
         const mill = Date.now() - startTime;
@@ -118,13 +105,13 @@ const tokenValidator = (( token, payload, expiresIn=3600 ) => {
 
  // User Authorization checker
  // @Desc This checked to see if a user is authorized to access protected routes.
- const checkValidity = (( data, userData, userId=data.queryStrings.id) => {
-    // Extract token, userId - check if both are valid
-    const { validFrom } = userData.token;    
-    const tokenIsValid = tokenValidator(validFrom);
-    const authorized = tokenIsValid && userId === userData.id ? true : false; 
-    return authorized
-});
+//  const checkValidity = (( data, userData, userId=data.queryStrings.id) => {
+//     // Extract token, userId - check if both are valid
+//     const { validFrom } = userData.token;    
+//     const tokenIsValid = tokenValidator(validFrom);
+//     const authorized = tokenIsValid && userId === userData.id ? true : false; 
+//     return authorized
+// });
 
 
 module.exports = {
@@ -134,7 +121,6 @@ module.exports = {
     'tokenGenerator': tokenGenerator,
     'tokenValidator': tokenValidator,
     'tokenObjectBuilder': tokenObjectBuilder,
-    'checkValidity': checkValidity
 };
 
 
