@@ -136,7 +136,8 @@ handlers._userDataProcessing.post = (( data, callback ) => {
                             tokenData = JSON.stringify(tokenData);
 
                             // Add tokenData to new users directory
-                            _data.create(`tokens`, id, tokenData, ((statusCode, tokenData) => {
+                            //@TODO FIX THIS COnDITION
+                            _data.create(`tokens/${phoneNumber}`, id, tokenData, ((statusCode, tokenData) => {
                                 if (statusCode === 200) {
                                     callback(200, util.errorUtility(200, 'Ok'));
                                 } else {
@@ -182,21 +183,22 @@ handlers._userDataProcessing.put = (( data, callback ) => {
 
     // get the data ( Read )
     if (token) {
-        _data.read('users', phoneNumber, ((statusCode, payload) => { 
+        _data.read(`tokens/${phoneNumber}`, token, ((statusCode, payload) => { 
+            console.log(payload)
+            // @TODO fix this condition
             if (statusCode === 200) {
                 // Check if user is authorized.
                 const authorized = util.tokenValidator(token, payload); 
-    
-                if ( authorized ) {        
+                
+                if ( authorized ) {
                     let updatedToken = {
-                        ...payload,
-                        token: util.tokenObjectBuilder(),
-                        firstName: data.payload.firstName,
-                        lastName: data.payload.lastName,
+                        token: util.tokenObjectBuilder()
                     };
+
                     updatedToken = JSON.stringify(updatedToken);
-                    // Update file
-                    _data.update('users',phoneNumber, updatedToken, ((statusCode, tokenData) => {
+
+                    // Update tokenData
+                    _data.update(`tokens/${phoneNumber}`, token, updatedToken, ((statusCode, tokenData) => {
                         if ( statusCode === 200 ) {
                             callback(statusCode, payload);
                         } else {
