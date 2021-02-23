@@ -47,16 +47,13 @@ handlers._userDataProcessing.get = (( data, callback ) => {
         data.queryStrings.phoneNumber : 
         false;    
 
-    // @TODO fix this contidition to check for phone number from valid token
     if ( phoneNumber && token ) {
-        _data.read('users', phoneNumber, ((statusCode, payload) => { 
-
+        _data.read(`tokens/${phoneNumber}`, token, ((statusCode, payload) => { 
             if (statusCode === 200) {
                 // Check if user is authorized.
-                const authorized = util.tokenValidator(token, payload); 
+                const authorized = util.tokenValidator(token, payload, phoneNumber); 
                 
                 if ( authorized ) {        
-                     // @TODO Validate authenticated users
                     // check if phone number
                     _data.read( 'users', phoneNumber, ((statusCode, tokenData) => {
                         if (statusCode === 200) {
@@ -83,7 +80,7 @@ handlers._userDataProcessing.get = (( data, callback ) => {
 
 // POST - /api/users/
 // Required: phone number
-// @desc User Login
+// @desc User Registration
 // optional: firstName, lastName, email
 // @Access Public
 handlers._userDataProcessing.post = (( data, callback ) => {
@@ -138,7 +135,7 @@ handlers._userDataProcessing.post = (( data, callback ) => {
 
                             // Add tokenData to new users directory
                             //@TODO FIX THIS COnDITION
-                            _data.create(`tokens/${phoneNumber}`, id, tokenData, ((statusCode, tokenData) => {
+                            _data.create(`tokens/${phoneNumber}`, id, tokenData, ((statusCode, payload) => {
                                 if (statusCode === 200) {
                                     callback(200, util.errorUtility(200, 'Ok'));
                                 } else {
@@ -182,31 +179,40 @@ handlers._userDataProcessing.put = (( data, callback ) => {
         data.payload.lastName : 
         false;
 
-    // get the data ( Read )
+    // Validate token
     if (token) {
         _data.read(`tokens/${phoneNumber}`, token, ((statusCode, payload) => { 
-        
             // @TODO fix this contidition to check for phone number from valid token
             if (statusCode === 200) {
                 // Check if user is authorized.
-                const authorized = util.tokenValidator(token, payload); 
-                
+                const authorized = util.tokenValidator(token, payload, phoneNumber); 
+
                 if ( authorized ) {
-                    let updatedToken = {
-                        token: util.tokenObjectBuilder()
-                    };
-
-                    updatedToken = JSON.stringify(updatedToken);
-
-                    // Update tokenData
-                    _data.update(`tokens/${phoneNumber}`, token, updatedToken, ((statusCode, tokenData) => {
-                        if ( statusCode === 200 ) {
-                            callback(statusCode, payload);
+                    
+                    // Initiate updated userData object                    
+                    let updatedUserData = {
+                        ...payload,
+                        firstName: firstName,
+                        lastName: lastName
+                    };                    
+                    updatedUserData = JSON.stringify(updatedUserData);
+                    
+                    // Update user's data
+                    _data.update('users', phoneNumber, updatedUserData, ((statusCode, updatedPayload) =>{
+                        
+                        if (statusCode === 200) {
+                            // @TODO Also update the token expiration time for the user's token
+                            _data.update(`tokens/${phoneNumber}`, phoneNumber, ((statusCode, tokenPayload) => {
+                                if (statusCode === 200) {
+                                    callback(200, updatedPayload)
+                                } else {
+                                    callback(400, util.errorUtility(tokenPayload.code, 'Could not provide new token for user', 'File processing'));
+                                }
+                            }))
                         } else {
-                            callback(403, util.errorUtility(403, 'Unauthorized', 'Authentication'));
+                            callback(400, util.errorUtility(tokenPayload.code, tokenPayload.message, 'File processing'));
                         }
                     }));
-            
                 } else {
                     callback(403, util.errorUtility(403, 'Unauthorized', 'Authentication'));
                 }            
@@ -279,6 +285,7 @@ handlers.token = (( data, callback ) => {
 handlers._token = {};
 
 // POST - /token/
+// @Desc User Login
 // @Acces public
 // Required: phoneNumber, password
 handlers._token.post = ((data, callback) => {
@@ -297,20 +304,32 @@ handlers._token.post = ((data, callback) => {
     if (password && phoneNumber) {
         // look up user and validate phone number
         _data.read('users', phoneNumber, ((statusCode, userData) => {
-            // Update the token for the user    
-            let updatedToken = {
-                ...userData,
-                token: util.tokenObjectBuilder()
-            };
-            updatedToken = JSON.stringify(updatedToken);
-            _data.update( 'users', phoneNumber, updatedToken, ((statusCode, tokenData) => {
-                if ( statusCode === 200 ) {
-                    callback(statusCode, userData)
-                } else {
-                    callback(500, 
-                        util.errorUtility(500, 'Server Error: Could not write to file', 'fileProcessing'));
-                }
-            }));
+            // Validate the password
+            const passwordIsValid = util.generateHashPassword(password) === userData.hashPassword ? true : false;
+            
+            if (statusCode === 200 && passwordIsValid) {
+
+                   //@TODO FIX THIS... AT USER LOGIN SCREEN USERS WILL NOT HAVE A TOKEN
+
+                // Delete the existing token(if any) and create a new one for the user.
+                _data.deleteFiles(`tokens/${phoneNumber}`, token, ((statusCode, tokenPayload) => {
+                    if (statusCode === 200) {
+                        // Create a new token object for the user                
+                        let tokenObject = util.tokenObjectBuilder();
+                        tokenObject = JSON.stringify(tokenObject);
+                        
+                        _data.create(`tokens/${phoneNumber}`, phoneNumber, tokenObject, ((statusCode, tokenPaylod) =>{
+                            if (statusCode === 200) {
+                                callback(200, tokenPaylod);
+                            } else {
+                                callback(tokenPayload.code, util.errorUtility(tokenPayload.code, tokenPayload.message));
+                            }
+                        }));                   
+                    } else {
+                        callback(tokenPayload.code, util.errorUtility(tokenPayload.code, tokenPayload.message));
+                    }
+                }));
+            }
         }));
 
     } else {
