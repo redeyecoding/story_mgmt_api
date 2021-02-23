@@ -119,21 +119,38 @@ handlers._userDataProcessing.post = (( data, callback ) => {
                 firstName: firstName,
                 lastName: lastName,
                 tosAgreement: tosAgreement,
-                hashPassword: hashPassword,
-                
+                hashPassword: hashPassword                
             };    
             userData = JSON.stringify(userData);
             
             // Create new user
-            _data.create('users', phoneNumber, userData, (response) => {
+            _data.create('users', phoneNumber, userData, ((statusCode, data) => {
+                if (statusCode === 200) {
+                    // Setup token directory for new user
+                    _data.createDir(`tokens/${phoneNumber}`, ((statusCode) => {
+                        if (statusCode === 200) {
+                            // Generate token for new user
+                            let tokenData = util.tokenObjectBuilder();
+                            const id = tokenData.token;
+                            tokenData.phone = phoneNumber;
+                            tokenData = JSON.stringify(tokenData);
 
-            });
-
-            // Set up token for new user
-            const tokenData = util.tokenObjectBuilder();
-            tokenData.phone = phoneNumber;
-            
-    
+                            // Add tokenData to new users directory
+                            _data.create(`tokens`, id, tokenData, ((statusCode, tokenData) => {
+                                if (statusCode === 200) {
+                                    callback(200, util.errorUtility(200, 'Ok'));
+                                } else {
+                                    callback(500, util.errorUtility(data.code, data.message));
+                                }
+                            }));
+                        } else {
+                            callback(500, util.errorUtility(data.code, data.message));
+                        }
+                    }));
+                } else {
+                    callback(400, util.errorUtility(data.code, data.message));
+                }
+            }));
         } else {
             callback(400, 
                 util.errorUtility(400, 'Missing required fields', 'fileProcessing' ));
