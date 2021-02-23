@@ -114,19 +114,25 @@ handlers._userDataProcessing.post = (( data, callback ) => {
                 // Set up hash
             const hashPassword = util.generateHashPassword(password);
     
-            let userData = {
-                id: util.tokenGenerator(),
+            let userData = {                
                 phoneNumber :phoneNumber,
                 firstName: firstName,
                 lastName: lastName,
                 tosAgreement: tosAgreement,
                 hashPassword: hashPassword,
-                token: util.tokenObjectBuilder(),
-            };
-    
+                
+            };    
             userData = JSON.stringify(userData);
-            // Open the file
-            _data.create('users', phoneNumber, userData, callback);
+            
+            // Create new user
+            _data.create('users', phoneNumber, userData, (response) => {
+
+            });
+
+            // Set up token for new user
+            const tokenData = util.tokenObjectBuilder();
+            tokenData.phone = phoneNumber;
+            
     
         } else {
             callback(400, 
@@ -297,9 +303,15 @@ handlers._checks = {};
 
 // POST - Create checks for logged in user
 // @Acces private
-// Required: phoneNumber, password
+// Required: protocol, method, successCode, timeoutSeconds, url
 handlers._checks.post = ((data, callback) => {
+    // Pull token
+    const token = typeof(data.queryStrings.token.trim()) === 'string' && data.queryStrings.token.trim().length === util.tokenRounds ? 
+        data.queryStrings.token :
+        false;
 
+    // Validate token
+    util.tokenValidator
 });
 
 
