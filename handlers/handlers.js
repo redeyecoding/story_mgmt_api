@@ -48,26 +48,39 @@ handlers._userDataProcessing.get = (( data, callback ) => {
         data.queryStrings.phoneNumber : 
         false;    
 
+    // @TODO Setting token validation and reset of token expiration
     if ( phoneNumber && token ) {
-        _data.read(`tokens/${phoneNumber}`, token, ((statusCode, payload) => { 
+        _data.read(`tokens/${phoneNumber}`, token, ((statusCode, tokenPayload) => { 
             if (statusCode === 200) {
                 // Check if user is authorized.
-                const authorized = util.tokenValidator(token, payload, phoneNumber); 
+                const authorized = util.tokenValidator(token, tokenPayload, phoneNumber); 
                 
                 if ( authorized ) {        
                     // check if phone number
-                    _data.read( 'users', phoneNumber, ((statusCode, tokenData) => {
+                    _data.read( 'users', phoneNumber, ((statusCode, userData) => {
                         if (statusCode === 200) {
-                            callback(statusCode, payload);
+                             // Initantiate user's token Object 
+                             let updateTokenPayload = {
+                                ...tokenPayload,
+                                validFrom: util.resetValidToken()
+                            };
+                            updateTokenPayload = JSON.stringify(updateTokenPayload);
+
+                            // Update the user's token expiration time
+                            _data.update(`tokens/${phoneNumber}`, token, updateTokenPayload, ((statusCode, tokenPayload) => {
+                                if (statusCode === 200) {
+                                    callback(200, userData);
+                                } else {
+                                    callback(500, util.errorUtility(500, 'Could not restt token expiration timer', 'Authentication'));
+                                }
+                            }));
                         } else {
                             callback(403, util.errorUtility(403, 'Unauthorized', 'Authentication'));
                         }
-                    }) );
-            
+                    }));            
                 } else {
                     callback(403, util.errorUtility(403, 'Unauthorized', 'Authentication'));
                 }
-
             } else{
                 callback(403, util.errorUtility(403, 'Unauthorized', 'Authentication'));
             }
