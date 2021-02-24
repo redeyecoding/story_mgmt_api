@@ -309,16 +309,16 @@ handlers._token.post = ((data, callback) => {
             
             if (statusCode === 200 && passwordIsValid) {
 
-                   //@TODO FIX THIS... AT USER LOGIN SCREEN USERS WILL NOT HAVE A TOKEN
-
                 // Delete the existing token(if any) and create a new one for the user.
-                _data.deleteFiles(`tokens/${phoneNumber}`, token, ((statusCode, tokenPayload) => {
+                _data.deleteFiles(`tokens/${phoneNumber}`, ((statusCode, tokenPayload) => {
                     if (statusCode === 200) {
                         // Create a new token object for the user                
                         let tokenObject = util.tokenObjectBuilder();
+                        const newToken = tokenObject.token;
                         tokenObject = JSON.stringify(tokenObject);
                         
-                        _data.create(`tokens/${phoneNumber}`, phoneNumber, tokenObject, ((statusCode, tokenPaylod) =>{
+                        
+                        _data.create(`tokens/${phoneNumber}`, newToken, tokenObject, ((statusCode, tokenPaylod) =>{
                             if (statusCode === 200) {
                                 callback(200, tokenPaylod);
                             } else {
