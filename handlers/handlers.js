@@ -3,6 +3,7 @@
 */
 'use strict'
 
+const { stat } = require('fs');
 // Dependencies
 const _data = require('../lib/data');
 const util = require('../utils/util');
@@ -130,7 +131,7 @@ handlers._userDataProcessing.post = (( data, callback ) => {
                             // Generate token for new user
                             let tokenData = util.tokenObjectBuilder();
                             const id = tokenData.token;
-                            tokenData.phone = phoneNumber;
+                            tokenData.phoneNumber = phoneNumber;
                             tokenData = JSON.stringify(tokenData);
 
                             // Add tokenData to new users directory
@@ -181,38 +182,53 @@ handlers._userDataProcessing.put = (( data, callback ) => {
 
     // Validate token
     if (token) {
-        _data.read(`tokens/${phoneNumber}`, token, ((statusCode, payload) => { 
-            // @TODO fix this contidition to check for phone number from valid token
+        _data.read(`tokens/${phoneNumber}`, token, ((statusCode, tokenPayload) => { 
+            
             if (statusCode === 200) {
                 // Check if user is authorized.
-                const authorized = util.tokenValidator(token, payload, phoneNumber); 
+                const authorized = util.tokenValidator(token, tokenPayload, phoneNumber); 
 
                 if ( authorized ) {
-                    
-                    // Initiate updated userData object                    
-                    let updatedUserData = {
-                        ...payload,
-                        firstName: firstName,
-                        lastName: lastName
-                    };                    
-                    updatedUserData = JSON.stringify(updatedUserData);
-                    
-                    // Update user's data
-                    _data.update('users', phoneNumber, updatedUserData, ((statusCode, updatedPayload) =>{
-                        
-                        if (statusCode === 200) {
-                            // @TODO Also update the token expiration time for the user's token
-                            _data.update(`tokens/${phoneNumber}`, phoneNumber, ((statusCode, tokenPayload) => {
-                                if (statusCode === 200) {
-                                    callback(200, updatedPayload)
-                                } else {
-                                    callback(400, util.errorUtility(tokenPayload.code, 'Could not provide new token for user', 'File processing'));
-                                }
-                            }))
+                    // Pull current user data
+                    _data.read('users', phoneNumber, ((statusCode, currentUserData) => {
+                        if (statusCode === 200) {               
+                            // Initiate updated userData object                    
+                            let updatedUserData = {
+                                ...currentUserData,
+                                firstName: firstName,
+                                lastName: lastName
+                            }; 
+                            updatedUserData = JSON.stringify(updatedUserData);
+
+                        // Update user's data
+                        _data.update('users', phoneNumber, updatedUserData, ((statusCode, updatedPayload) =>{
+                            // Update the user's data
+                            if (statusCode === 200) {
+                                // Initantiate user's token Object 
+                                let updateTokenPayload = {
+                                    ...tokenPayload,
+                                    validFrom: util.resetValidToken()
+                                };
+                                updateTokenPayload = JSON.stringify(updateTokenPayload);
+
+                                // Update the user's token expiration time
+                                _data.update(`tokens/${phoneNumber}`, token, updateTokenPayload, ((statusCode, tokenPayload) => {
+                                    if (statusCode === 200) {
+                                        callback(200, tokenPayload);
+                                    } else {
+                                        callback(500, util.errorUtility(500, 'Could not restt token expiration timer', 'Authentication'));
+                                    }
+                                }));
+                            } else {
+                                callback(400, util.errorUtility(tokenPayload.code, tokenPayload.message, 'File processing'));
+                            }
+                        }));
+
                         } else {
-                            callback(400, util.errorUtility(tokenPayload.code, tokenPayload.message, 'File processing'));
+                            callback(500, util.errorUtility(500, 'Could not update user data.', 'File processing'));
                         }
                     }));
+
                 } else {
                     callback(403, util.errorUtility(403, 'Unauthorized', 'Authentication'));
                 }            
@@ -221,7 +237,7 @@ handlers._userDataProcessing.put = (( data, callback ) => {
             }
         }));
     } else {
-        callback(403, util.errorUtility(403, 'Unauthorized', 'Authentication'));
+        callback(400, util.errorUtility(400, 'Missing or invalid token', 'Authentication'));
     }   
 });
 
@@ -314,10 +330,11 @@ handlers._token.post = ((data, callback) => {
                     if (statusCode === 200) {
                         // Create a new token object for the user                
                         let tokenObject = util.tokenObjectBuilder();
+                        tokenObject.phoneNumber = userData.phoneNumber;
                         const newToken = tokenObject.token;
                         tokenObject = JSON.stringify(tokenObject);
                         
-                        
+                        // upload new token for user
                         _data.create(`tokens/${phoneNumber}`, newToken, tokenObject, ((statusCode, tokenPaylod) =>{
                             if (statusCode === 200) {
                                 callback(200, tokenPaylod);
