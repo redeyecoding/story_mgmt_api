@@ -71,7 +71,7 @@ const tokenGenerator = (rounds=tokenRounds) => {
 // Token Validator
 const tokenValidator = (( token, payload, phoneNumber, expiresIn=3600 ) => {
     // verify if token provided is valid and matches existing user in database
-    const startTime = token === payload.token && phoneNumber === payload.phone 
+    const startTime = token === payload.token && phoneNumber === payload.phoneNumber 
         ? payload.validFrom : 
         false;
 
@@ -83,6 +83,11 @@ const tokenValidator = (( token, payload, phoneNumber, expiresIn=3600 ) => {
     };
     return false;
  });
+
+
+  // Token Object builder
+ // @desc used for building initial token object.
+ const resetValidToken = () => Date.now();
 
 
  // Token Object builder
@@ -121,6 +126,7 @@ module.exports = {
     'tokenGenerator': tokenGenerator,
     'tokenValidator': tokenValidator,
     'tokenObjectBuilder': tokenObjectBuilder,
+    'resetValidToken': resetValidToken
 };
 
 
