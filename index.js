@@ -15,8 +15,14 @@ const config = require('./config');
 const util = require('./utils/util');
 
 
-
-
+/*
+    @TODO MOVE THIS CODE INTO server.js file.
+      THIS index.js FILE WILL HAVE MINIMAL CODE
+      AS IT WILL BE USED TO START:
+      - HTTP SERVER
+      - HTTPS SERVER
+      - WORKERS
+*/
 // HTTP SERVER
 const httpServer = http.createServer(( req, res )=> universalServerUtility(req, res));
 

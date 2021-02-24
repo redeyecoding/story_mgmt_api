@@ -11,7 +11,7 @@ const _data = require('../lib/data');
 const config = require('../config');
 
 
-// @TODO REFACTOR THIS CODE ( SPLIT UP "like" functions into separate utility files)
+// @TODO BREAK CODE UP INTO SMALLER MODULES
 
 // JSON parser
 const jsonParser = string => {

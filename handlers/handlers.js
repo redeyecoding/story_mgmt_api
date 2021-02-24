@@ -9,6 +9,7 @@ const _data = require('../lib/data');
 const util = require('../utils/util');
 
 // @TODO DIRECTORY WILL BE CHANGED TO SOMETHING MORE DYNAMIC
+// @TODO BREAK CODE UP INTO SMALLER MODULES
 
 // Handler object
 const handlers = {};
