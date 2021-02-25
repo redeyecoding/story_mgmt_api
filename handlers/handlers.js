@@ -49,7 +49,6 @@ handlers._userDataProcessing.get = (( data, callback ) => {
         data.queryStrings.phoneNumber : 
         false;    
 
-    // @TODO Setting token validation and reset of token expiration
     if ( phoneNumber && token ) {
         _data.read(`tokens/${phoneNumber}`, token, ((statusCode, tokenPayload) => { 
             if (statusCode === 200) {
@@ -149,7 +148,6 @@ handlers._userDataProcessing.post = (( data, callback ) => {
                             tokenData = JSON.stringify(tokenData);
 
                             // Add tokenData to new users directory
-                            //@TODO FIX THIS COnDITION
                             _data.create(`tokens/${phoneNumber}`, id, tokenData, ((statusCode, payload) => {
                                 if (statusCode === 200) {
                                     callback(200, util.errorUtility(200, 'Ok'));
@@ -267,9 +265,7 @@ handlers._userDataProcessing.delete = (( data, callback ) => {
         data.queryStrings.phoneNumber.trim().length === 10 ? 
         data.queryStrings.phoneNumber : 
         false;    
-    
-    
-        // @TODO fix this contidition to check for phone number from valid token
+  
     if ( phoneNumber && token ) {
         _data.read(`tokens/${phoneNumber}`, token, ((statusCode, tokenPayload) => { 
             if (statusCode === 200 ) {
