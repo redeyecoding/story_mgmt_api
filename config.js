@@ -4,6 +4,8 @@
 
 */
 
+//TODO move hashSecret to .env file
+
 // Dependencies
 const fs = require('fs');
 const httpsCert = fs.readFileSync('./https/cert.pem', 'utf8');
