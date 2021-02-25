@@ -271,21 +271,31 @@ handlers._userDataProcessing.delete = (( data, callback ) => {
     
         // @TODO fix this contidition to check for phone number from valid token
     if ( phoneNumber && token ) {
-        _data.read('users', phoneNumber, ((statusCode, payload) => { 
-
-            if (statusCode === 200) {
+        _data.read(`tokens/${phoneNumber}`, token, ((statusCode, tokenPayload) => { 
+            if (statusCode === 200 ) {
                 // Check if user is authorized.
-                const authorized = util.tokenValidator(token, payload); 
-                
-                if ( authorized ) {        
-                     // Delete user file
-                    _data.delete('users',phoneNumber, callback);
-            
-                } else {
+                const authorized = util.tokenValidator(token, tokenPayload, phoneNumber); 
+
+                if (authorized) {
+                    // Delete user file 
+                    _data.delete('users', phoneNumber, ((statusCode, delPayload) => {
+                        if (statusCode === 200) {
+                            // Delete the token associated with the user
+                            _data.deleteDir(`tokens/${phoneNumber}`, ((statusCode, tokenPayload) => {
+                                if (statusCode === 200) {                                    
+                                    callback(200);
+                                } else {
+                                    callback(500, util.errorUtility(500, 'Could not delete token for user', 'file processing'));
+                                }
+                            }));
+                        } else {
+                            callback(500, util.errorUtility(500, 'Could not delete user account.', 'file processing'));
+                        }
+                        }));                            
+                } else{
                     callback(403, util.errorUtility(403, 'Unauthorized', 'Authentication'));
                 }
-                            
-            } else{
+            } else {
                 callback(403, util.errorUtility(403, 'Unauthorized', 'Authentication'));
             }
         }));
@@ -339,7 +349,7 @@ handlers._token.post = ((data, callback) => {
             
             if (statusCode === 200 && passwordIsValid) {
 
-                // Delete the existing token(if any) and create a new one for the user.
+                // Delete the existing token (if any) and create a new one for the user.
                 _data.deleteFiles(`tokens/${phoneNumber}`, ((statusCode, tokenPayload) => {
                     if (statusCode === 200) {
                         // Create a new token object for the user                
