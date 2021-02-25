@@ -71,7 +71,6 @@ const tokenGenerator = (rounds=tokenRounds) => {
 // Token Validator
 const tokenValidator = (( token, payload, phoneNumber, expiresIn=3600 ) => {
     // verify if token provided is valid and matches existing user in database
-    console.log(payload)
     const startTime = token === payload.token && phoneNumber === payload.phoneNumber 
         ? payload.validFrom : 
         false;
