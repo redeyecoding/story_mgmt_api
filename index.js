@@ -71,8 +71,11 @@ const universalServerUtility = (( req, res ) => {
             
             foundHandler(data, (statusCode, payload) => {
                 // Hide hashPassword, id and token
-                delete payload.hashPassword;
-                delete payload.id;
+
+                if ( payload ) {
+                    delete payload.hashPassword;
+                    delete payload.id;
+                };
 
                 payload = JSON.stringify(payload);
                 res.setHeader('Content-Type', 'application/json');
