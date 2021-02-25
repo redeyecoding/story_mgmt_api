@@ -4,7 +4,7 @@
 
 */
 
-//TODO move hashSecret to .env file
+//@TODO move hashSecret to .env file
 
 // Dependencies
 const fs = require('fs');
