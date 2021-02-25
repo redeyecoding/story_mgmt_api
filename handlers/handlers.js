@@ -283,7 +283,7 @@ handlers._userDataProcessing.delete = (( data, callback ) => {
                             // Delete the token associated with the user
                             _data.deleteDir(`tokens/${phoneNumber}`, ((statusCode, tokenPayload) => {
                                 if (statusCode === 200) {                                    
-                                    callback(200);
+                                    callback(200,util.errorUtility(200, 'User Account deleted', 'file processing'));
                                 } else {
                                     callback(500, util.errorUtility(500, 'Could not delete token for user', 'file processing'));
                                 }
