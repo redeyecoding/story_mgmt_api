@@ -32,7 +32,8 @@ const config = {
             key: httpsKey
         }
     },
-    hashingSecret: 'ljhsldjfhaushdASDHFIH284h@#$H%@IUHVWHRf89'
+    hashingSecret: 'ljhsldjfhaushdASDHFIH284h@#$H%@IUHVWHRf89',
+    maxTimeout: 6
 };
 
 module.exports = config;
