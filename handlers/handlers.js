@@ -4,6 +4,7 @@
 'use strict'
 
 const { stat } = require('fs');
+const config = require('../config');
 // Dependencies
 const _data = require('../lib/data');
 const util = require('../utils/util');
@@ -387,6 +388,48 @@ handlers._checks.post = ((data, callback) => {
     const token = typeof(data.queryStrings.token.trim()) === 'string' && data.queryStrings.token.trim().length === util.tokenRounds ? 
         data.queryStrings.token :
         false;
+
+    const protocol = typeof(data.payload.protocol.trim()) === 'string' &&  ['http', 'https'].indexOf(data.payload.protocol.trim()) > -1 ? 
+        data.payload.protocol.trim() :
+        false;
+
+    const url = typeof(data.payload.url.trim()) === 'string' && data.payload.url.trim() ? 
+        data.payload.url.trim() :
+        false;
+
+    const method = typeof(data.payload.method.trim()) === 'string' &&  ['get', 'post', 'put', 'delete'].indexOf(data.payload.method.trim()) > -1 ? 
+        data.payload.method.trim() :
+        false;
+
+    const successCodes = typeof(data.payload.successCodes) === 'object' && data.payload.successCodes instanceof Array && data.payload.successCodes.length > 0 ? 
+        data.payload.successCodes : false;
+
+    const timeOutSeconds = typeof(data.payload.timeOutSeconds) === 'number' && data.payload.timeOutSeconds % 1 === 0 && data.payload.timeOutSeconds >= 1 && data.payload.timeOutSeconds <= config.maxTimeout ? 
+        data.payload.timeOutSeconds :
+        false;
+    
+    // @TODO complete the post checks feature
+    if (token) {
+        _data.read(`tokens/${phoneNumber}`, token, ((statusCode, tokenData) => {
+            if (statusCode === 200) {
+                // Validate token
+                const isAuthenticated = util.tokenValidator(token, tokenPayload, phoneNumber);
+
+                if (isAuthenticated) {
+                    // Instantiate checks Object
+                    const checksObject = {};
+                } else {
+                    callback(403, util.errorUtility(403, 'Missing or invalid token', 'Authentication'));
+                }
+            } else {
+                callback(403, util.errorUtility(403, 'Missing or invalid token', 'Authentication'));
+            }
+        }));
+    } else {
+        callback(403, util.errorUtility(403, 'Missing or invalid token', 'Authentication'));
+    }
+     
+    
 
     // Validate token
     util.tokenValidator
