@@ -108,7 +108,8 @@ httpsServer.listen(
 // Router
 const router = {
     'users': handlers.users,
-    'token': handlers.token
+    'token': handlers.token,
+    'checks': handlers.checks
 };
 
 
