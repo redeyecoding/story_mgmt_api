@@ -376,6 +376,19 @@ handlers._token.post = ((data, callback) => {
 });
 
 
+// Token Handler Object
+handlers.checks = (( data, callback ) => {
+    // Check for valid inbound request
+    const validRequests = ['get','post','delete', 'put'];
+    const method = data.method;
+
+    if ( validRequests.includes(method) ) {
+        handlers._checks[method]( data, callback );
+    } else {
+        callback(400, { 'Error': 'Invalid request' });
+    }
+});
+
 
 // Initiate checks object
 handlers._checks = {};
@@ -385,8 +398,8 @@ handlers._checks = {};
 // Required: protocol, method, successCode, timeoutSeconds, url
 handlers._checks.post = ((data, callback) => {
     // Pull token
-    const token = typeof(data.queryStrings.token.trim()) === 'string' && data.queryStrings.token.trim().length === util.tokenRounds ? 
-        data.queryStrings.token :
+    const token = typeof(data.headers.token.trim()) === 'string' && data.headers.token.trim().length === util.tokenRounds ? 
+        data.headers.token :
         false;
 
     const protocol = typeof(data.payload.protocol.trim()) === 'string' &&  ['http', 'https'].indexOf(data.payload.protocol.trim()) > -1 ? 
@@ -412,12 +425,39 @@ handlers._checks.post = ((data, callback) => {
     if (token) {
         _data.read(`tokens/${phoneNumber}`, token, ((statusCode, tokenData) => {
             if (statusCode === 200) {
+                const phoneNumber = tokenData.phoneNumber;
                 // Validate token
-                const isAuthenticated = util.tokenValidator(token, tokenPayload, phoneNumber);
+                const authorized = util.tokenValidator(token, tokenData, phoneNumber);
 
-                if (isAuthenticated) {
+                if (authorized) {
                     // Instantiate checks Object
-                    const checksObject = {};
+                    const checksObject = {
+                        id: util.tokenGenerator(),
+                        protocol: protocol,
+                        url: url,
+                        method: method,
+                        successCodes: successCodes,
+                        timeOutSeconds: timeOutSeconds
+                    };
+
+                    JSON.stringify(checksObject);
+                
+                // Add checks directory for user
+                _data.createDir(`checks/${phoneNumber}`, (statusCode) => {
+                    if (statusCode === 200) {
+                        // Add checks to directory for user
+                        _data.create(`checks/${phoneNumber}`, phoneNumber, checksObject, (( statusCode, checkData ) => {
+                            if (statusCode === 200) {
+                                callback(200, checkData);
+                            } else {
+                                callback(500, util.errorUtility(500, 'Could not add checks to user directory', 'Check data processing.'));
+                            }
+                        }))
+                    } else {
+                        callback(500, util.errorUtility(500, 'Could not create directory for user.', 'Check creation'));
+                    }
+                })
+               
                 } else {
                     callback(403, util.errorUtility(403, 'Missing or invalid token', 'Authentication'));
                 }
