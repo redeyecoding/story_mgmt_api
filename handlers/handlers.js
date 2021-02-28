@@ -11,6 +11,7 @@ const util = require('../utils/util');
 
 // @TODO DIRECTORY WILL BE CHANGED TO SOMETHING MORE DYNAMIC
 // @TODO BREAK CODE UP INTO SMALLER MODULES
+// @TODO RUN THROUGH APT TO PUT CORRECT STATUS CODES IN RESPONSES
 
 // Handler object
 const handlers = {};
@@ -401,7 +402,7 @@ handlers._checks.post = ((data, callback) => {
     const token = typeof(data.headers.token.trim()) === 'string' && data.headers.token.trim().length === util.tokenRounds ? 
         data.headers.token :
         false;
-
+    console.log(util.tokenRounds )
     const protocol = typeof(data.payload.protocol.trim()) === 'string' &&  ['http', 'https'].indexOf(data.payload.protocol.trim()) > -1 ? 
         data.payload.protocol.trim() :
         false;

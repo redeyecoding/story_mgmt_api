@@ -60,7 +60,7 @@ const tokenGenerator = (rounds=tokenRounds) => {
     const chars = 'abcdefghijklmnopqrstuvwx()!*yz123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
     let token = '';
 
-    for (let i=0; i <= rounds; i++) {
+    for (let i=1; i <= rounds; i++) {
         let randomNumber = Math.floor(Math.random() * chars.length);
         token += chars[randomNumber];
     }
