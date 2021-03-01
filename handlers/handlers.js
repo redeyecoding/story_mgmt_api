@@ -52,7 +52,7 @@ handlers._userDataProcessing.get = (( data, callback ) => {
         false;    
 
     if ( phoneNumber && token ) {
-        _data.read(`tokens/${phoneNumber}`, token, ((statusCode, tokenPayload) => { 
+        _data.read(`tokens`, token, ((statusCode, tokenPayload) => { 
             if (statusCode === 200) {
                 // Check if user is authorized.
                 const authorized = util.tokenValidator(token, tokenPayload, phoneNumber); 
@@ -69,7 +69,7 @@ handlers._userDataProcessing.get = (( data, callback ) => {
                             updateTokenPayload = JSON.stringify(updateTokenPayload);
 
                             // Update the user's token expiration time
-                            _data.update(`tokens/${phoneNumber}`, token, updateTokenPayload, ((statusCode, tokenPayload) => {
+                            _data.update(`tokens`, token, updateTokenPayload, ((statusCode, tokenPayload) => {
                                 if (statusCode === 200) {
                                     callback(200, userData);
                                 } else {
@@ -141,16 +141,16 @@ handlers._userDataProcessing.post = (( data, callback ) => {
             _data.create('users', phoneNumber, userData, ((statusCode, data) => {
                 if (statusCode === 200) {
                     // Setup token directory for new user
-                    _data.createDir(`tokens/${phoneNumber}`, ((statusCode) => {
+                    _data.createDir(`tokens`, ((statusCode) => {
                         if (statusCode === 200) {
                             // Generate token for new user
                             let tokenData = util.tokenObjectBuilder();
-                            const id = tokenData.token;
+                            const token = tokenData.token;
                             tokenData.phoneNumber = phoneNumber;
                             tokenData = JSON.stringify(tokenData);
 
                             // Add tokenData to new users directory
-                            _data.create(`tokens/${phoneNumber}`, id, tokenData, ((statusCode, payload) => {
+                            _data.create(`tokens`, token, tokenData, ((statusCode, payload) => {
                                 if (statusCode === 200) {
                                     callback(200, util.errorUtility(200, 'Ok'));
                                 } else {
@@ -196,7 +196,7 @@ handlers._userDataProcessing.put = (( data, callback ) => {
 
     // Validate token
     if (token) {
-        _data.read(`tokens/${phoneNumber}`, token, ((statusCode, tokenPayload) => { 
+        _data.read(`tokens`, token, ((statusCode, tokenPayload) => { 
             
             if (statusCode === 200) {
                 // Check if user is authorized.
@@ -226,7 +226,7 @@ handlers._userDataProcessing.put = (( data, callback ) => {
                                 updateTokenPayload = JSON.stringify(updateTokenPayload);
 
                                 // Update the user's token expiration time
-                                _data.update(`tokens/${phoneNumber}`, token, updateTokenPayload, ((statusCode, tokenPayload) => {
+                                _data.update(`tokens`, token, updateTokenPayload, ((statusCode, tokenPayload) => {
                                     if (statusCode === 200) {
                                         callback(200, tokenPayload);
                                     } else {
@@ -269,7 +269,7 @@ handlers._userDataProcessing.delete = (( data, callback ) => {
         false;    
   
     if ( phoneNumber && token ) {
-        _data.read(`tokens/${phoneNumber}`, token, ((statusCode, tokenPayload) => { 
+        _data.read(`tokens`, token, ((statusCode, tokenPayload) => { 
             if (statusCode === 200 ) {
                 // Check if user is authorized.
                 const authorized = util.tokenValidator(token, tokenPayload, phoneNumber); 
@@ -279,7 +279,7 @@ handlers._userDataProcessing.delete = (( data, callback ) => {
                     _data.delete('users', phoneNumber, ((statusCode, delPayload) => {
                         if (statusCode === 200) {
                             // Delete the token associated with the user
-                            _data.deleteDir(`tokens/${phoneNumber}`, ((statusCode, tokenPayload) => {
+                            _data.deleteDir(`tokens`, ((statusCode, tokenPayload) => {
                                 if (statusCode === 200) {                                    
                                     callback(200,util.errorUtility(200, 'User Account deleted', 'file processing'));
                                 } else {
@@ -348,7 +348,7 @@ handlers._token.post = ((data, callback) => {
             if (statusCode === 200 && passwordIsValid) {
 
                 // Delete the existing token (if any) and create a new one for the user.
-                _data.deleteFiles(`tokens/${phoneNumber}`, ((statusCode, tokenPayload) => {
+                _data.deleteFiles(`tokens`, ((statusCode, tokenPayload) => {
                     if (statusCode === 200) {
                         // Create a new token object for the user                
                         let tokenObject = util.tokenObjectBuilder();
@@ -357,7 +357,7 @@ handlers._token.post = ((data, callback) => {
                         tokenObject = JSON.stringify(tokenObject);
                         
                         // upload new token for user
-                        _data.create(`tokens/${phoneNumber}`, newToken, tokenObject, ((statusCode, tokenPaylod) =>{
+                        _data.create(`tokens`, newToken, tokenObject, ((statusCode, tokenPaylod) =>{
                             if (statusCode === 200) {
                                 callback(200, tokenPaylod);
                             } else {
@@ -400,67 +400,80 @@ handlers._checks = {};
 handlers._checks.post = ((data, callback) => {
     // Pull token
     const token = typeof(data.headers.token.trim()) === 'string' && data.headers.token.trim().length === util.tokenRounds ? 
-        data.headers.token :
-        false;
-    console.log(util.tokenRounds )
-    const protocol = typeof(data.payload.protocol.trim()) === 'string' &&  ['http', 'https'].indexOf(data.payload.protocol.trim()) > -1 ? 
-        data.payload.protocol.trim() :
-        false;
+            data.headers.token :
+            false;
 
-    const url = typeof(data.payload.url.trim()) === 'string' && data.payload.url.trim() ? 
-        data.payload.url.trim() :
-        false;
+    let protocol = typeof(data.payload.protocol.trim()) === 'string' &&  ['http', 'https'].indexOf(data.payload.protocol.trim()) > -1 ? 
+            data.payload.protocol.trim() :
+            false;
 
-    const method = typeof(data.payload.method.trim()) === 'string' &&  ['get', 'post', 'put', 'delete'].indexOf(data.payload.method.trim()) > -1 ? 
-        data.payload.method.trim() :
-        false;
+    let url = typeof(data.payload.url.trim()) === 'string' && data.payload.url.trim() ? 
+            data.payload.url.trim() :
+            false;
 
-    const successCodes = typeof(data.payload.successCodes) === 'object' && data.payload.successCodes instanceof Array && data.payload.successCodes.length > 0 ? 
-        data.payload.successCodes : false;
+    let method = typeof(data.payload.method.trim()) === 'string' &&  ['get', 'post', 'put', 'delete'].indexOf(data.payload.method.trim()) > -1 ? 
+            data.payload.method.trim() :
+            false;
 
-    const timeOutSeconds = typeof(data.payload.timeOutSeconds) === 'number' && data.payload.timeOutSeconds % 1 === 0 && data.payload.timeOutSeconds >= 1 && data.payload.timeOutSeconds <= config.maxTimeout ? 
-        data.payload.timeOutSeconds :
-        false;
-    
-    // @TODO complete the post checks feature
+    let successCodes = typeof(data.payload.successCodes) === 'object' && data.payload.successCodes instanceof Array && data.payload.successCodes.length > 0 ? 
+            data.payload.successCodes : false;
+
+    let timeOutSeconds = typeof(data.payload.timeOutSeconds) === 'number' && data.payload.timeOutSeconds % 1 === 0 && data.payload.timeOutSeconds >= 1 && data.payload.timeOutSeconds <= config.maxTimeout ? 
+            data.payload.timeOutSeconds :
+            false;
+
+     // @TODO complete the post checks feature
     if (token) {
-        _data.read(`tokens/${phoneNumber}`, token, ((statusCode, tokenData) => {
-            if (statusCode === 200) {
-                const phoneNumber = tokenData.phoneNumber;
-                // Validate token
-                const authorized = util.tokenValidator(token, tokenData, phoneNumber);
+        _data.read(`tokens`, token, ((statusCode, tokenData) => {
+            if (statusCode === 200) {            
+                if (protocol && url && method && successCodes && timeOutSeconds) {
+                    const phoneNumber = tokenData.phoneNumber;
+                    // Validate token
+                    const authorized = util.tokenValidator(token, tokenData, phoneNumber);
 
-                if (authorized) {
-                    // Instantiate checks Object
-                    const checksObject = {
-                        id: util.tokenGenerator(),
-                        protocol: protocol,
-                        url: url,
-                        method: method,
-                        successCodes: successCodes,
-                        timeOutSeconds: timeOutSeconds
-                    };
+                    // Check if number of checks is less than max
+                    _data.read('users', phoneNumber, ((statusCode, userData) => {
+                        if (statusCode === 200) {
+                            userData.checks
+                        } else {
+                            callback(500, util.errorUtility(500, 'Could not generate check for user.', 'Check creation'));
+                        }
+                    }));
 
+                    if (authorized) {
+                        // Instantiate checks Object
+                        const checksObject = {
+                            id: util.tokenGenerator(),
+                            protocol: protocol,
+                            url: url,
+                            method: method,
+                            successCodes: successCodes,
+                            timeOutSeconds: timeOutSeconds
+                        };
+    
                     JSON.stringify(checksObject);
-                
-                // Add checks directory for user
-                _data.createDir(`checks/${phoneNumber}`, (statusCode) => {
-                    if (statusCode === 200) {
-                        // Add checks to directory for user
-                        _data.create(`checks/${phoneNumber}`, phoneNumber, checksObject, (( statusCode, checkData ) => {
-                            if (statusCode === 200) {
-                                callback(200, checkData);
-                            } else {
-                                callback(500, util.errorUtility(500, 'Could not add checks to user directory', 'Check data processing.'));
-                            }
-                        }))
+    
+                    // Add checks directory for user
+                    _data.createDir(`checks/${phoneNumber}`, (statusCode) => {
+                        if (statusCode === 200) {
+                            // Add checks to directory for user
+                            _data.create(`checks/${phoneNumber}`, checksObject.id, checksObject, (( statusCode, checkData ) => {
+                                if (statusCode === 200) {
+                                    callback(200, checkData);
+                                } else {
+                                    callback(500, util.errorUtility(500, 'Could not add checks to user directory', 'Check data processing.'));
+                                }
+                            }))
+                        } else {
+                            callback(500, util.errorUtility(500, 'Could not create directory for user.', 'Check creation'));
+                        }
+                    });
+                   
                     } else {
-                        callback(500, util.errorUtility(500, 'Could not create directory for user.', 'Check creation'));
+                        callback(403, util.errorUtility(403, 'Missing or invalid token', 'Authentication'));
                     }
-                })
-               
                 } else {
-                    callback(403, util.errorUtility(403, 'Missing or invalid token', 'Authentication'));
+                    callback(400, util.errorUtility(400, 'Missing valid field(s)', 'checks'));
                 }
             } else {
                 callback(403, util.errorUtility(403, 'Missing or invalid token', 'Authentication'));
