@@ -126,7 +126,8 @@ module.exports = {
     'tokenGenerator': tokenGenerator,
     'tokenValidator': tokenValidator,
     'tokenObjectBuilder': tokenObjectBuilder,
-    'resetValidToken': resetValidToken
+    'resetValidToken': resetValidToken,
+    'tokenRounds': tokenRounds
 };
 
 
