@@ -13,8 +13,11 @@ const config = require('../config');
 
 // @TODO BREAK CODE UP INTO SMALLER MODULES
 
+// instantiate util object
+const util = {}
+
 // JSON parser
-const jsonParser = string => {
+util.jsonParser = string => {
     if (string === '') {
         null
     } else {
@@ -23,7 +26,7 @@ const jsonParser = string => {
 };
 
 // Error utility
-const errorUtility = (( statusCode, message, errorType=null ) => {
+util.errorUtility = (( statusCode, message, errorType=null ) => {
     // Assemble statusMessage Object
     const errorObject = {
         error: {
@@ -41,7 +44,7 @@ const errorUtility = (( statusCode, message, errorType=null ) => {
     return jsonResponse;
 });
 
-const generateHashPassword = password => {
+util.generateHashPassword = password => {
     /** Hashing algorithm sha512 */
     if (typeof(password) === 'string' && password.length > 0) {
         const hash = crypto.createHmac('sha512', config.hashingSecret)
@@ -55,8 +58,8 @@ const generateHashPassword = password => {
 
 
 // Token Generator
-const tokenRounds = 40;
-const tokenGenerator = (rounds=tokenRounds) => {
+util.tokenRounds = 40;
+util.tokenGenerator = (rounds=util.tokenRounds) => {
     const chars = 'abcdefghijklmnopqrstuvwx()!*yz123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
     let token = '';
 
@@ -69,7 +72,7 @@ const tokenGenerator = (rounds=tokenRounds) => {
 
 
 // Token Validator
-const tokenValidator = (( token, payload, phoneNumber, expiresIn=3600 ) => {
+util.tokenValidator = (( token, payload, phoneNumber, expiresIn=3600 ) => {
     // verify if token provided is valid and matches existing user in database
     const startTime = token === payload.token && phoneNumber === payload.phoneNumber 
         ? payload.validFrom : 
@@ -87,12 +90,12 @@ const tokenValidator = (( token, payload, phoneNumber, expiresIn=3600 ) => {
 
   // Token Object builder
  // @desc used for building initial token object.
- const resetValidToken = () => Date.now();
+ util.resetValidToken = () => Date.now();
 
 
  // Token Object builder
  // @desc used for building initial token object.
- const tokenObjectBuilder = () => {
+ util.tokenObjectBuilder = () => {
     // Set expiration time for token
     const startTime = Date.now();
     const milliseconds = Date.now() - startTime;
@@ -100,7 +103,7 @@ const tokenValidator = (( token, payload, phoneNumber, expiresIn=3600 ) => {
     const expires = Math.floor(milliseconds / 1000) + seconds;
 
     const tokenObject = {
-        token: tokenGenerator(),
+        token: util.tokenGenerator(),
         validFrom: startTime,
         expires: expires
     };
@@ -119,15 +122,16 @@ const tokenValidator = (( token, payload, phoneNumber, expiresIn=3600 ) => {
 // });
 
 
-module.exports = {
-    'jsonParser': jsonParser,
-    'errorUtility': errorUtility,
-    'generateHashPassword': generateHashPassword,
-    'tokenGenerator': tokenGenerator,
-    'tokenValidator': tokenValidator,
-    'tokenObjectBuilder': tokenObjectBuilder,
-    'resetValidToken': resetValidToken,
-    'tokenRounds': tokenRounds
-};
+// module.exports = {
+//     'jsonParser': jsonParser,
+//     'errorUtility': errorUtility,
+//     'generateHashPassword': generateHashPassword,
+//     'tokenGenerator': tokenGenerator,
+//     'tokenValidator': tokenValidator,
+//     'tokenObjectBuilder': tokenObjectBuilder,
+//     'resetValidToken': resetValidToken,
+//     'tokenRounds': tokenRounds
+// };
 
+module.exports = util;
 
