@@ -33,7 +33,8 @@ const config = {
         }
     },
     hashingSecret: 'ljhsldjfhaushdASDHFIH284h@#$H%@IUHVWHRf89',
-    maxTimeout: 6
+    maxTimeout: 6,
+    maxChecks: 6
 };
 
 module.exports = config;
