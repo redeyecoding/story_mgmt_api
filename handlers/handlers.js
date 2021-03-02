@@ -230,9 +230,9 @@ handlers._userDataProcessing.put = (( data, callback ) => {
                                 // Update the user's token expiration time
                                 _data.update(`tokens`, token, updateTokenPayload, ((statusCode, tokenPayload) => {
                                     if (statusCode === 200) {
-                                        callback(200, tokenPayload);
+                                        callback(200, updatedPayload);
                                     } else {
-                                        callback(500, util.errorUtility(500, 'Could not restt token expiration timer', 'Authentication'));
+                                        callback(500, util.errorUtility(500, 'Could not reset token expiration timer', 'Authentication'));
                                     }
                                 }));
                             } else {
