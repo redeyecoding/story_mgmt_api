@@ -12,6 +12,7 @@ const util = require('../utils/util');
 // @TODO DIRECTORY WILL BE CHANGED TO SOMETHING MORE DYNAMIC
 // @TODO BREAK CODE UP INTO SMALLER MODULES
 // @TODO RUN THROUGH APT TO PUT CORRECT STATUS CODES IN RESPONSES
+// @TODO CORRECT THE RETURN VALUES FOR PUT, POST, GET AND DELETE
 
 // Handler object
 const handlers = {};
@@ -133,7 +134,8 @@ handlers._userDataProcessing.post = (( data, callback ) => {
                 firstName: firstName,
                 lastName: lastName,
                 tosAgreement: tosAgreement,
-                hashPassword: hashPassword                
+                hashPassword: hashPassword,
+                checks: []               
             };    
             userData = JSON.stringify(userData);
             
@@ -434,46 +436,66 @@ handlers._checks.post = ((data, callback) => {
                     // Check if number of checks is less than max
                     _data.read('users', phoneNumber, ((statusCode, userData) => {
                         if (statusCode === 200) {
-                            userData.checks
+                            const validChecks = typeof(userData.checks) === 'object' && userData.checks.length < config.maxChecks ? true : false;
+
+                            if (validChecks) {
+                                if (authorized) {
+                                    // Instantiate checks Object
+                                    let checksObject = {
+                                        id: util.tokenGenerator(20),
+                                        protocol: protocol,
+                                        url: url,
+                                        method: method,
+                                        successCodes: successCodes,
+                                        timeOutSeconds: timeOutSeconds
+                                    };
+                                    const checkId = checksObject.id;
+
+                                    // Add check id to user file
+                                    let updatedUserData = {
+                                        ...userData,
+                                        checks: userData.checks.concat(checkId)
+                                    };
+                                    updatedUserData = JSON.stringify(updatedUserData);
+
+                                    _data.update('users', phoneNumber, updatedUserData, ((statusCode, checkData) => {
+                                        if (statusCode === 200) {
+                                            // Setup User check directory
+                                            checksObject = JSON.stringify(checksObject);
+                
+                                            // Create Check directory for user
+                                            _data.createDir(`checks/${phoneNumber}`, (statusCode) => {
+                                                if (statusCode === 200) {   
+
+                                                    // Add checks to directory for user
+                                                    _data.create(`checks/${phoneNumber}`, checkId, checksObject, (( statusCode, checkData ) => {
+                                                        if (statusCode === 200) {
+                                                            callback(201, checkData);
+                                                        } else {
+                                                            callback(500, util.errorUtility(500, 'Could not add checks to user directory', 'Check data processing.'));
+                                                        }
+                                                    }));
+                                                } else {
+                                                    callback(500, util.errorUtility(500, 'Could not create directory for user.', 'Check creation'));
+                                                }
+                                            }); 
+                                        } else {
+                                            callback(500, util.errorUtility(500, 'Could not add check Id to user profile.', 'Check creation'));
+                                        }
+                                    }));
+                              
+                                } else {
+                                    callback(403, util.errorUtility(403, 'Missing or invalid token', 'Authentication'));
+                                }
+                            } else {
+                                callback(400, util.errorUtility(400, `User reached max checks. ${config.maxChecks}`, 'Check creation'));
+                            }
                         } else {
                             callback(500, util.errorUtility(500, 'Could not generate check for user.', 'Check creation'));
                         }
                     }));
-
-                    if (authorized) {
-                        // Instantiate checks Object
-                        const checksObject = {
-                            id: util.tokenGenerator(),
-                            protocol: protocol,
-                            url: url,
-                            method: method,
-                            successCodes: successCodes,
-                            timeOutSeconds: timeOutSeconds
-                        };
-    
-                    JSON.stringify(checksObject);
-    
-                    // Add checks directory for user
-                    _data.createDir(`checks/${phoneNumber}`, (statusCode) => {
-                        if (statusCode === 200) {
-                            // Add checks to directory for user
-                            _data.create(`checks/${phoneNumber}`, checksObject.id, checksObject, (( statusCode, checkData ) => {
-                                if (statusCode === 200) {
-                                    callback(200, checkData);
-                                } else {
-                                    callback(500, util.errorUtility(500, 'Could not add checks to user directory', 'Check data processing.'));
-                                }
-                            }))
-                        } else {
-                            callback(500, util.errorUtility(500, 'Could not create directory for user.', 'Check creation'));
-                        }
-                    });
-                   
-                    } else {
-                        callback(403, util.errorUtility(403, 'Missing or invalid token', 'Authentication'));
-                    }
                 } else {
-                    callback(400, util.errorUtility(400, 'Missing valid field(s)', 'checks'));
+                    callback(403, util.errorUtility(403, 'Missing valid field(s)', 'checks'));
                 }
             } else {
                 callback(403, util.errorUtility(403, 'Missing or invalid token', 'Authentication'));
