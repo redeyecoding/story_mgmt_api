@@ -512,6 +512,105 @@ handlers._checks.post = ((data, callback) => {
 });
 
 
+// PUT - Edit check
+// @Acces private
+// Required: checkID and At least one: protocol, method, successCode, timeoutSeconds, url
+handlers._checks.put = ((data, callback) => {
+    //  grab the inboud data 
+    const token = typeof(data.headers.token.trim()) === 'string' && data.headers.token.trim().length === util.tokenRounds ? 
+        data.headers.token :
+        false;
+
+    let protocol = typeof(data.payload.protocol.trim()) === 'string' &&  ['http', 'https'].indexOf(data.payload.protocol.trim()) > -1 ? 
+        data.payload.protocol.trim() :
+        false;
+
+    let url = typeof(data.payload.url.trim()) === 'string' && data.payload.url.trim() ? 
+        data.payload.url.trim() :
+        false;
+
+    let method = typeof(data.payload.method.trim()) === 'string' &&  ['get', 'post', 'put', 'delete'].indexOf(data.payload.method.trim()) > -1 ? 
+        data.payload.method.trim() :
+        false;
+
+    let successCodes = typeof(data.payload.successCodes) === 'object' && data.payload.successCodes instanceof Array && data.payload.successCodes.length > 0 ? 
+        data.payload.successCodes : 
+        false;
+
+    let timeOutSeconds = typeof(data.payload.timeOutSeconds) === 'number' && data.payload.timeOutSeconds % 1 === 0 && data.payload.timeOutSeconds >= 1 && data.payload.timeOutSeconds <= config.maxTimeout ? 
+        data.payload.timeOutSeconds :
+        false;
+
+    let checkId = typeof(data.payload.checkId.trim()) === 'string' && typeof(data.payload.checkId.trim().length) === 20 ?
+        data.payload.checkId.trim() :
+        false;
+
+
+    if (token) {
+        _data.read(`tokens`, token, ((statusCode, tokenData) => {
+            if (statusCode === 200) {            
+                if (checkId & protocol || url || method || successCodes || timeOutSeconds) {
+                    const phoneNumber = tokenData.phoneNumber;
+                    // Validate token
+                    const authorized = util.tokenValidator(token, tokenData, phoneNumber);
+
+                    if (authorized) {
+                         // Validate check id sent belongs to the user who sent it 
+                        _data.read('users', phoneNumber, ((statusCode, userData) => {
+                            if (statusCode === 200) {
+                                const checkIdIsValid = userData.checks.includes(checkId);
+
+                                if (checkIdIsValid) {
+                                    // Fetch the check
+                                    _data.read(`checks/${phoneNumber}`, checkId, ((statusCode, checkData) => {
+                                        if (statusCode === 200) {
+                                            // Update check Data                                            
+                                            
+                                            let updatedCheck = { ...util.jsonParser(checkData) };
+
+                                            if (protocol) updatedCheck.protocol = protocol;
+                                            if (url) updatedCheck.url = url;
+                                            if (method) updatedCheck.method = method;
+                                            if (successCodes) updatedCheck.successCodes = successCodes;
+                                            if (timeOutSeconds) updatedCheck.timeOutSeconds = timeOutSeconds;
+
+                                            updatedCheck = JSON.stringify(updatedCheck)
+                                            // Update the 
+                                            _data.update(`checks/${phoneNumber}`, phoneNumber, updatedCheck, ((statusCode, checkData) => {
+                                                if (statusCode === 200) {
+                                                    // Setup User check directory
+                                                    callback(201, checkData);
+ 
+                                                } else {
+                                                    callback(500, util.errorUtility(500, 'Could not update check for user.', 'Check creation'));
+                                                }
+                                            }));
+                                        }
+                                    }));                                   
+                                } else {
+                                    callback(400, util.errorUtility(400, `User reached max checks. ${config.maxChecks}`, 'Check creation'));
+                                }
+                            } else {
+                                callback(500, util.errorUtility(500, 'Could not generate check for user.', 'Check creation'));
+                            }
+                        }));
+                    } else {
+                        callback(403, util.errorUtility(403, 'Missing or invalid token', 'Authentication'));
+                    }
+                } else {
+                    callback(403, util.errorUtility(403, 'Missing valid field(s).', 'checks'));
+                }
+            } else {
+                callback(403, util.errorUtility(403, 'Missing or invalid token', 'Authentication'));
+            }
+        }));
+    } else {
+        callback(403, util.errorUtility(403, 'Missing or invalid token', 'Authentication'));
+    }
+
+});
+
+
 
 // GET - Get token
 // @Acces private
@@ -524,12 +623,6 @@ handlers._checks.get = ((data, callback) => {
 
 
 
-// PUT - Edit check
-// @Acces private
-// Required: checkId
-handlers._checks.put = ((data, callback) => {
-
-});
 
 
 
