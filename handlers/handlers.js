@@ -592,6 +592,7 @@ handlers._checks.put = ((data, callback) => {
                                             _data.update(`checks/${phoneNumber}`, data.payload.checkId, updatedCheck, ((statusCode, checkData) => {
                                                 if (statusCode === 200) {
                                                     // Initantiate user's token Object 
+
                                                     let updateTokenPayload = {
                                                         ...tokenPayload,
                                                         validFrom: util.resetValidToken()
