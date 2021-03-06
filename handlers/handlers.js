@@ -13,7 +13,7 @@ const util = require('../utils/util');
 // @TODO BREAK CODE UP INTO SMALLER MODULES
 // @TODO RUN THROUGH APT TO PUT CORRECT STATUS CODES IN RESPONSES
 // @TODO CORRECT THE RETURN VALUES FOR PUT, POST, GET AND DELETE
-//!!!  @BIG_TODO cannot create multiple users. when 2nd user logs in all tokens get erased!
+// @TODO  (BIG PROBLEM) cannot create multiple users. when 2nd user logs in all tokens get erased!
 
 // Handler object
 const handlers = {};
