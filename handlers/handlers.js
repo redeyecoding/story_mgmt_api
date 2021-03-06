@@ -591,15 +591,14 @@ handlers._checks.put = ((data, callback) => {
                                             // Update the user's check 
                                             _data.update(`checks/${phoneNumber}`, data.payload.checkId, updatedCheck, ((statusCode, checkData) => {
                                                 if (statusCode === 200) {
-                                                    // Initantiate user's token Object 
-
+                                                    // Update the user's token expiration time
                                                     let updateTokenPayload = {
                                                         ...tokenPayload,
                                                         validFrom: util.resetValidToken()
                                                     };
                                                     updateTokenPayload = JSON.stringify(updateTokenPayload);
 
-                                                    // Update the user's token expiration time
+                                                    // Upload the new tokenPayload
                                                     _data.update(`tokens`, token, updateTokenPayload, ((statusCode, tokenPayload) => {
                                                         if (statusCode === 200) {
                                                             callback(201, checkData);
