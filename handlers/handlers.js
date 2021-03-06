@@ -521,38 +521,51 @@ handlers._checks.put = ((data, callback) => {
         data.headers.token :
         false;
 
-    let protocol = typeof(data.payload.protocol.trim()) === 'string' &&  ['http', 'https'].indexOf(data.payload.protocol.trim()) > -1 ? 
-        data.payload.protocol.trim() :
-        false;
+    let protocol = data.payload.protocol !== undefined &&
+                    typeof(data.payload.protocol) === 'string' &&  
+                    ['http', 'https'].indexOf(data.payload.protocol.trim()) > -1 ? 
+                    data.payload.protocol.trim() :
+                    false;
 
-    let url = typeof(data.payload.url.trim()) === 'string' && data.payload.url.trim() ? 
-        data.payload.url.trim() :
-        false;
+    let url = data.payload.url !== undefined && 
+                typeof(data.payload.url.trim()) === 'string' && 
+                data.payload.url.trim() ? 
+                data.payload.url.trim() :
+                false;
 
-    let method = typeof(data.payload.method.trim()) === 'string' &&  ['get', 'post', 'put', 'delete'].indexOf(data.payload.method.trim()) > -1 ? 
-        data.payload.method.trim() :
-        false;
+    let method = data.payload.method !== undefined &&
+                    data.payload.method.trim() === 'string' &&  
+                    ['get', 'post', 'put', 'delete'].indexOf(data.payload.method.trim()) > -1 ? 
+                    data.payload.method.trim() :
+                    false;
 
-    let successCodes = typeof(data.payload.successCodes) === 'object' && data.payload.successCodes instanceof Array && data.payload.successCodes.length > 0 ? 
-        data.payload.successCodes : 
-        false;
+    let successCodes = data.payload.successCodes !== undefined &&
+                        typeof(data.payload.successCodes) === 'object' && 
+                        data.payload.successCodes instanceof Array && 
+                        data.payload.successCodes.length > 0 ? 
+                        data.payload.successCodes : 
+                        false;
 
-    let timeOutSeconds = typeof(data.payload.timeOutSeconds) === 'number' && data.payload.timeOutSeconds % 1 === 0 && data.payload.timeOutSeconds >= 1 && data.payload.timeOutSeconds <= config.maxTimeout ? 
-        data.payload.timeOutSeconds :
-        false;
+    let timeOutSeconds = data.payload.timeOutSeconds !== undefined &&
+                            typeof(data.payload.timeOutSeconds) === 'number' &&
+                            data.payload.timeOutSeconds % 1 === 0 &&
+                            data.payload.timeOutSeconds >= 1 &&
+                            data.payload.timeOutSeconds <= config.maxTimeout ? 
+                            data.payload.timeOutSeconds :
+                            false;
 
-    let checkId = typeof(data.payload.checkId.trim()) === 'string' && typeof(data.payload.checkId.trim().length) === 20 ?
+    let checkId = typeof(data.payload.checkId.trim()) === 'string' && data.payload.checkId.trim().length === 20 ?
         data.payload.checkId.trim() :
         false;
 
-
+    // Validate the token
     if (token) {
-        _data.read(`tokens`, token, ((statusCode, tokenData) => {
+        _data.read(`tokens`, token, ((statusCode, tokenPayload) => {
             if (statusCode === 200) {            
                 if (checkId & protocol || url || method || successCodes || timeOutSeconds) {
-                    const phoneNumber = tokenData.phoneNumber;
+                    const phoneNumber = tokenPayload.phoneNumber;
                     // Validate token
-                    const authorized = util.tokenValidator(token, tokenData, phoneNumber);
+                    const authorized = util.tokenValidator(token, tokenPayload, phoneNumber);
 
                     if (authorized) {
                          // Validate check id sent belongs to the user who sent it 
@@ -564,9 +577,8 @@ handlers._checks.put = ((data, callback) => {
                                     // Fetch the check
                                     _data.read(`checks/${phoneNumber}`, checkId, ((statusCode, checkData) => {
                                         if (statusCode === 200) {
-                                            // Update check Data                                            
-                                            
-                                            let updatedCheck = { ...util.jsonParser(checkData) };
+                                            // Update check Data             
+                                            let updatedCheck = { ...checkData };
 
                                             if (protocol) updatedCheck.protocol = protocol;
                                             if (url) updatedCheck.url = url;
@@ -574,13 +586,26 @@ handlers._checks.put = ((data, callback) => {
                                             if (successCodes) updatedCheck.successCodes = successCodes;
                                             if (timeOutSeconds) updatedCheck.timeOutSeconds = timeOutSeconds;
 
-                                            updatedCheck = JSON.stringify(updatedCheck)
-                                            // Update the 
-                                            _data.update(`checks/${phoneNumber}`, phoneNumber, updatedCheck, ((statusCode, checkData) => {
+                                            updatedCheck = JSON.stringify(updatedCheck);
+
+                                            // Update the user's check 
+                                            _data.update(`checks/${phoneNumber}`, data.payload.checkId, updatedCheck, ((statusCode, checkData) => {
                                                 if (statusCode === 200) {
-                                                    // Setup User check directory
-                                                    callback(201, checkData);
- 
+                                                    // Initantiate user's token Object 
+                                                    let updateTokenPayload = {
+                                                        ...tokenPayload,
+                                                        validFrom: util.resetValidToken()
+                                                    };
+                                                    updateTokenPayload = JSON.stringify(updateTokenPayload);
+
+                                                    // Update the user's token expiration time
+                                                    _data.update(`tokens`, token, updateTokenPayload, ((statusCode, tokenPayload) => {
+                                                        if (statusCode === 200) {
+                                                            callback(201, checkData);
+                                                        } else {
+                                                            callback(500, util.errorUtility(500, 'Could not reset token expiration timer', 'Authentication'));
+                                                        }
+                                                    }));
                                                 } else {
                                                     callback(500, util.errorUtility(500, 'Could not update check for user.', 'Check creation'));
                                                 }
@@ -588,17 +613,17 @@ handlers._checks.put = ((data, callback) => {
                                         }
                                     }));                                   
                                 } else {
-                                    callback(400, util.errorUtility(400, `User reached max checks. ${config.maxChecks}`, 'Check creation'));
+                                    callback(401, util.errorUtility(401, `Invalid checkId`, 'Check update'));
                                 }
                             } else {
                                 callback(500, util.errorUtility(500, 'Could not generate check for user.', 'Check creation'));
                             }
                         }));
                     } else {
-                        callback(403, util.errorUtility(403, 'Missing or invalid token', 'Authentication'));
+                        callback(401, util.errorUtility(403, 'Could not match token with user', 'Authorization'));
                     }
                 } else {
-                    callback(403, util.errorUtility(403, 'Missing valid field(s).', 'checks'));
+                    callback(400, util.errorUtility(400, 'Missing valid field(s).', 'checks'));
                 }
             } else {
                 callback(403, util.errorUtility(403, 'Missing or invalid token', 'Authentication'));
