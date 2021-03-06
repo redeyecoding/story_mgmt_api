@@ -516,7 +516,7 @@ handlers._checks.post = ((data, callback) => {
 // @Acces private
 // Required: checkID and At least one: protocol, method, successCode, timeoutSeconds, url
 handlers._checks.put = ((data, callback) => {
-    //  grab the inboud data 
+    //  Fetch token 
     const token = typeof(data.headers.token.trim()) === 'string' && data.headers.token.trim().length === util.tokenRounds ? 
         data.headers.token :
         false;
