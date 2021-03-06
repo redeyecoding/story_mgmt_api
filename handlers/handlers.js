@@ -13,6 +13,7 @@ const util = require('../utils/util');
 // @TODO BREAK CODE UP INTO SMALLER MODULES
 // @TODO RUN THROUGH APT TO PUT CORRECT STATUS CODES IN RESPONSES
 // @TODO CORRECT THE RETURN VALUES FOR PUT, POST, GET AND DELETE
+//!!!  @BIG_TODO cannot create multiple users. when 2nd user logs in all tokens get erased!
 
 // Handler object
 const handlers = {};
@@ -178,13 +179,9 @@ handlers._userDataProcessing.post = (( data, callback ) => {
 // Required: token
 // @Desc User updating exiting information
 // @Access Private
+// @TODO Create function for validating user's email-address
 handlers._userDataProcessing.put = (( data, callback ) => {
     const token = data.headers.token;
-
-    const phoneNumber = typeof(data.queryStrings.phoneNumber) === 'string' && 
-        data.queryStrings.phoneNumber.trim().length === 10 ? 
-        data.queryStrings.phoneNumber : 
-        false;  
 
     const firstName = typeof(data.payload.firstName) === 'string' && 
         data.payload.firstName.trim().length > 0 ? 
@@ -201,12 +198,16 @@ handlers._userDataProcessing.put = (( data, callback ) => {
         _data.read(`tokens`, token, ((statusCode, tokenPayload) => { 
             
             if (statusCode === 200) {
+                // Fetch user's phoneNumber
+                const phoneNumber = tokenPayload.phoneNumber;
+
                 // Check if user is authorized.
                 const authorized = util.tokenValidator(token, tokenPayload, phoneNumber); 
 
-                if ( authorized ) {
+                if (authorized) {
                     // Pull current user data
                     _data.read('users', phoneNumber, ((statusCode, currentUserData) => {
+                        console.log(currentUserData)
                         if (statusCode === 200) {               
                             // Initiate updated userData object                    
                             let updatedUserData = {
@@ -424,13 +425,13 @@ handlers._checks.post = ((data, callback) => {
             data.payload.timeOutSeconds :
             false;
 
-     // @TODO complete the post checks feature
     if (token) {
         _data.read(`tokens`, token, ((statusCode, tokenData) => {
             if (statusCode === 200) {            
                 if (protocol && url && method && successCodes && timeOutSeconds) {
                     const phoneNumber = tokenData.phoneNumber;
-                    // Validate token
+
+                    // Check if user is authorized
                     const authorized = util.tokenValidator(token, tokenData, phoneNumber);
 
                     // Check if number of checks is less than max
