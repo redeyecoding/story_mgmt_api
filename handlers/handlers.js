@@ -564,7 +564,8 @@ handlers._checks.put = ((data, callback) => {
             if (statusCode === 200) {            
                 if (checkId & protocol || url || method || successCodes || timeOutSeconds) {
                     const phoneNumber = tokenPayload.phoneNumber;
-                    // Validate token
+                    
+                    // Check if user is authorized
                     const authorized = util.tokenValidator(token, tokenPayload, phoneNumber);
 
                     if (authorized) {
@@ -632,7 +633,6 @@ handlers._checks.put = ((data, callback) => {
     } else {
         callback(403, util.errorUtility(403, 'Missing or invalid token', 'Authentication'));
     }
-
 });
 
 
