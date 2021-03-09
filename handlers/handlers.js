@@ -129,8 +129,15 @@ handlers._userDataProcessing.post = (( data, callback ) => {
         if ( phoneNumber && tosAgreement && firstName && lastName && password ) {
                 // Set up hash
             const hashPassword = util.generateHashPassword(password);
+
+            // Generate token for new user
+            let tokenData = util.tokenObjectBuilder();
+            const token = tokenData.token;
+            tokenData.phoneNumber = phoneNumber;
+            tokenData = JSON.stringify(tokenData);
     
-            let userData = {                
+            let userData = {   
+                id: token,             
                 phoneNumber :phoneNumber,
                 firstName: firstName,
                 lastName: lastName,
@@ -146,12 +153,6 @@ handlers._userDataProcessing.post = (( data, callback ) => {
                     // Setup token directory for new user
                     _data.createDir(`tokens`, ((statusCode) => {
                         if (statusCode === 200) {
-                            // Generate token for new user
-                            let tokenData = util.tokenObjectBuilder();
-                            const token = tokenData.token;
-                            tokenData.phoneNumber = phoneNumber;
-                            tokenData = JSON.stringify(tokenData);
-
                             // Add tokenData to new users directory
                             _data.create(`tokens`, token, tokenData, ((statusCode, payload) => {
                                 if (statusCode === 200) {
@@ -345,13 +346,14 @@ handlers._token.post = ((data, callback) => {
     if (password && phoneNumber) {
         // look up user and validate phone number
         _data.read('users', phoneNumber, ((statusCode, userData) => {
+            console.log(userData)
             // Validate the password
             const passwordIsValid = util.generateHashPassword(password) === userData.hashPassword ? true : false;
             
             if (statusCode === 200 && passwordIsValid) {
 
                 // Delete the existing token (if any) and create a new one for the user.
-                _data.deleteFiles(`tokens`, ((statusCode, tokenPayload) => {
+                _data.delete(`tokens`, userData.id, ((statusCode, tokenPayload) => {
                     if (statusCode === 200) {
                         // Create a new token object for the user                
                         let tokenObject = util.tokenObjectBuilder();
@@ -371,9 +373,10 @@ handlers._token.post = ((data, callback) => {
                         callback(tokenPayload.code, util.errorUtility(tokenPayload.code, tokenPayload.message));
                     }
                 }));
+            } else {
+                callback(401, util.errorUtility(401, 'Invalid username or password', 'Authentication'));
             }
         }));
-
     } else {
         callback(400,util.errorUtility(400, 'Missing required field(s)', 'Authorization' ));
     }
@@ -642,7 +645,60 @@ handlers._checks.put = ((data, callback) => {
 // @Acces private
 // Required: token, checkId
 handlers._checks.get = ((data, callback) => {
+    //  Fetch token 
+    const token = typeof(data.headers.token.trim()) === 'string' && data.headers.token.trim().length === util.tokenRounds ? 
+        data.headers.token :
+        false;
 
+    let checkId = typeof(data.payload.checkId.trim()) === 'string' && data.payload.checkId.trim().length === 20 ?
+    data.payload.checkId.trim() :
+    false;
+
+    // Validate the token
+    if (token) {
+        _data.read(`tokens`, token, ((statusCode, tokenPayload) => {
+            if (statusCode === 200) {            
+                if (checkId) {
+                    const phoneNumber = tokenPayload.phoneNumber;
+                    
+                    // Check if user is authorized
+                    const authorized = util.tokenValidator(token, tokenPayload, phoneNumber);
+
+                    if (authorized) {
+                         // Validate check id sent belongs to the user who sent it 
+                        _data.read('users', phoneNumber, ((statusCode, userData) => {
+                            if (statusCode === 200) {
+                                const checkIdIsValid = userData.checks.includes(checkId);
+
+                                if (checkIdIsValid) {
+                                    // Fetch the check
+                                    _data.read(`checks/${phoneNumber}`, checkId, ((statusCode, checkData) => {
+                                        if (statusCode === 200) {
+                                            callback(200, checkData);
+                                        } else {
+                                            callback(500, util.errorUtility(500, 'Could not locate check.', 'Check creation'));
+                                        }
+                                    }));                                   
+                                } else {
+                                    callback(401, util.errorUtility(401, `Invalid checkId`, 'Check update'));
+                                }
+                            } else {
+                                callback(500, util.errorUtility(500, 'Could not generate check for user.', 'Check creation'));
+                            }
+                        }));
+                    } else {
+                        callback(401, util.errorUtility(403, 'Could not match token with user', 'Authorization'));
+                    }
+                } else {
+                    callback(400, util.errorUtility(400, 'Missing valid field(s).', 'checks'));
+                }
+            } else {
+                callback(403, util.errorUtility(403, 'Missing or invalid token', 'Authentication'));
+            }
+        }));
+    } else {
+        callback(403, util.errorUtility(403, 'Missing or invalid token', 'Authentication'));
+    }
 });
 
 
