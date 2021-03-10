@@ -208,7 +208,6 @@ handlers._userDataProcessing.put = (( data, callback ) => {
                 if (authorized) {
                     // Pull current user data
                     _data.read('users', phoneNumber, ((statusCode, currentUserData) => {
-                        console.log(currentUserData)
                         if (statusCode === 200) {               
                             // Initiate updated userData object                    
                             let updatedUserData = {
@@ -283,8 +282,11 @@ handlers._userDataProcessing.delete = (( data, callback ) => {
                     _data.delete('users', phoneNumber, ((statusCode, delPayload) => {
                         if (statusCode === 200) {
                             // Delete the token associated with the user
-                            _data.deleteDir(`tokens`, ((statusCode, tokenPayload) => {
-                                if (statusCode === 200) {                                    
+                            _data.delete(`tokens`, token, ((statusCode) => {
+                                if (statusCode === 200) {   
+                                    // TODO Delete checks associated with the user.
+                                    // TODO create algorithm that does this.
+                                 
                                     callback(200,util.errorUtility(200, 'User Account deleted', 'file processing'));
                                 } else {
                                     callback(500, util.errorUtility(500, 'Could not delete token for user', 'file processing'));
@@ -346,7 +348,6 @@ handlers._token.post = ((data, callback) => {
     if (password && phoneNumber) {
         // look up user and validate phone number
         _data.read('users', phoneNumber, ((statusCode, userData) => {
-            console.log(userData)
             // Validate the password
             const passwordIsValid = util.generateHashPassword(password) === userData.hashPassword ? true : false;
             
@@ -364,8 +365,24 @@ handlers._token.post = ((data, callback) => {
                         // upload new token for user
                         _data.create(`tokens`, newToken, tokenObject, ((statusCode, tokenPaylod) =>{
                             if (statusCode === 200) {
-                                callback(200, tokenPaylod);
+                                // Update user's data:
+                                let updatedUserData = {
+                                    ...userData,
+                                    id: newToken
+                                }; 
+                                updatedUserData = JSON.stringify(updatedUserData);
+
+                                _data.update('users', phoneNumber, updatedUserData, ((statusCode, userData) => {
+                                    if (statusCode === 200) {
+                                        callback(200, tokenPaylod);
+                                    } else {
+                                        callback(tokenPayload.code, util.errorUtility(tokenPayload.code, tokenPayload.message));
+                                    }
+                                }));
+
+
                             } else {
+                                console.log('test')
                                 callback(tokenPayload.code, util.errorUtility(tokenPayload.code, tokenPayload.message));
                             }
                         }));                   
