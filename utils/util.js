@@ -77,7 +77,7 @@ util.tokenValidator = (( token, payload, phoneNumber, expiresIn=3600 ) => {
     const startTime = token === payload.token && phoneNumber === payload.phoneNumber 
         ? payload.validFrom : 
         false;
-    
+
     if (startTime) {
         const mill = Date.now() - startTime;
         const timelapse = Math.floor(mill / 1000 );
