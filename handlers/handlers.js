@@ -13,7 +13,6 @@ const util = require('../utils/util');
 // @TODO BREAK CODE UP INTO SMALLER MODULES
 // @TODO RUN THROUGH APT TO PUT CORRECT STATUS CODES IN RESPONSES
 // @TODO CORRECT THE RETURN VALUES FOR PUT, POST, GET AND DELETE
-// @TODO  (BIG PROBLEM) cannot create multiple users. when 2nd user logs in all tokens get erased!
 
 // Handler object
 const handlers = {};
@@ -721,19 +720,95 @@ handlers._checks.get = ((data, callback) => {
 
 
 
-
-
-
-
-
-
 // DELETE - Delete check from check list
 // @Access private
-// Required: token
+// Required: token. checkID
 handlers._checks.delete = ((data, callback) => {
+    //  Fetch token 
+    const token = typeof(data.headers.token.trim()) === 'string' && data.headers.token.trim().length === util.tokenRounds ? 
+        data.headers.token :
+        false;
+    
+    let checkId = typeof(data.queryStrings.checkId.trim()) === 'string' && data.queryStrings.checkId.trim().length === 20 ?
+        data.queryStrings.checkId.trim() :
+        false;
+
+      // Validate the token
+    if (token) {
+        _data.read(`tokens`, token, ((statusCode, tokenPayload) => {
+            if (statusCode === 200) {            
+                if (checkId) {
+                    const phoneNumber = tokenPayload.phoneNumber;
+                    
+                    // Check if user is authorized
+                    const authorized = util.tokenValidator(token, tokenPayload, phoneNumber);
+
+                    if (authorized) {
+                         // Validate check id sent belongs to the user who sent it 
+                        _data.read('users', phoneNumber, ((statusCode, userData) => {
+                            if (statusCode === 200) {
+                                const checkIdIsValid = userData.checks.includes(checkId);
+
+                                if (checkIdIsValid) {
+                                    // Delete Check
+                                    _data.delete(`checks/${phoneNumber}`, checkId, ((statusCode, checkData) => {
+                                        if (statusCode === 200) {
+                                            // Remove check from user's check array
+                                            const updatedCheckArray = userData.checks.filter(check => check !== checkId);     
+                                            let updatedUserData = {
+                                                ...userData,
+                                                checks: updatedCheckArray
+                                            };                                            
+                                            updatedUserData = JSON.stringify(updatedUserData);
+                                            
+
+                                            // Update the user's check object
+                                            _data.update(`users`, phoneNumber, updatedUserData, ((statusCode, checkData) => {
+                                                if (statusCode === 200) {
+                                                    // Update the user's token expiration time
+                                                    let updateTokenPayload = {
+                                                        ...tokenPayload,
+                                                        validFrom: util.resetValidToken()
+                                                    };
+                                                    updateTokenPayload = JSON.stringify(updateTokenPayload);
+
+                                                  
+                                                    // Upload the new tokenPayload
+                                                    _data.update(`tokens`, token, updateTokenPayload, ((statusCode, tokenPayload) => {
+                                                        if (statusCode === 200) {
+                                                            callback(201,util.errorUtility(201, 'Check deleted'));
+                                                        } else {
+                                                            callback(500, util.errorUtility(500, 'Could not reset token expiration timer', 'Authentication'));
+                                                        }
+                                                    }));
+                                                }
+                                            }));
+                                        } else {
+                                            callback(500, util.errorUtility(500, 'Could not delete check.', 'Check creation'));
+                                        }
+                                    }));                                   
+                                } else {
+                                    callback(401, util.errorUtility(401, `Invalid checkId`, 'Check update'));
+                                } 
+                            } else {
+                                callback(500, util.errorUtility(500, 'Could not generate check for user.', 'Check creation'));
+                            }
+                        }));
+                    } else {
+                        callback(401, util.errorUtility(403, 'Could not match token with user', 'Authorization'));
+                    }
+                } else {
+                    callback(400, util.errorUtility(400, 'Missing valid field(s).', 'checks'));
+                }
+            } else {
+                callback(403, util.errorUtility(403, 'Missing or invalid token', 'Authentication'));
+            }
+        }));
+    } else {
+        callback(403, util.errorUtility(403, 'Missing or invalid token', 'Authentication'));
+    }
 
 });
-
 
 
 
