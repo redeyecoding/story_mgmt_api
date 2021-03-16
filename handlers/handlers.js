@@ -74,15 +74,15 @@ handlers._userDataProcessing.get = (( data, callback ) => {
                                 if (statusCode === 200) {
                                     callback(200, userData);
                                 } else {
-                                    callback(500, util.errorUtility(500, 'Could not restt token expiration timer', 'Authentication'));
+                                    callback(500, util.errorUtility(500, 'Could not reset token expiration timer', 'Authentication'));
                                 }
                             }));
                         } else {
-                            callback(403, util.errorUtility(403, 'Unauthorized', 'Authentication'));
+                            callback(500, util.errorUtility(500, 'Could not locate user data.', ''));
                         }
                     }));            
                 } else {
-                    callback(403, util.errorUtility(403, 'Unauthorized', 'Authentication'));
+                    callback(401, util.errorUtility(401, 'Unauthorized', 'Authorization'));
                 }
             } else{
                 callback(403, util.errorUtility(403, 'Unauthorized', 'Authentication'));
@@ -155,7 +155,7 @@ handlers._userDataProcessing.post = (( data, callback ) => {
                             // Add tokenData to new users directory
                             _data.create(`tokens`, token, tokenData, ((statusCode, payload) => {
                                 if (statusCode === 200) {
-                                    callback(200, util.errorUtility(200, 'Ok'));
+                                    callback(201, util.errorUtility(201, ''));
                                 } else {
                                     callback(500, util.errorUtility(data.code, data.message));
                                 }
@@ -236,7 +236,7 @@ handlers._userDataProcessing.put = (( data, callback ) => {
                                     }
                                 }));
                             } else {
-                                callback(400, util.errorUtility(tokenPayload.code, tokenPayload.message, 'File processing'));
+                                callback(500, util.errorUtility(tokenPayload.code, tokenPayload.message, 'File processing'));
                             }
                         }));
 
@@ -249,7 +249,7 @@ handlers._userDataProcessing.put = (( data, callback ) => {
                     callback(403, util.errorUtility(403, 'Unauthorized', 'Authentication'));
                 }            
             } else{
-                callback(403, util.errorUtility(403, 'Unauthorized', 'Authentication'));
+                callback(401, util.errorUtility(401, 'Unauthorized', 'Authorization'));
             }
         }));
     } else {
